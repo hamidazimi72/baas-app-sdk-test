@@ -1,0 +1,13 @@
+# dependencies & build output
+node_modules
+.next
+out
+build
+coverage
+
+# generated service worker (source: src/app/sw.ts)
+public/sw.js
+
+# vendored / compiled third-party code adapted into helpers
+src/helper/indexed-db/idb-libary
+src/helper/math-api/asset

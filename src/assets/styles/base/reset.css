@@ -1,0 +1,115 @@
+@layer base {
+	*,
+	*::before,
+	*::after {
+		box-sizing: border-box;
+		margin: 0;
+		padding: 0;
+	}
+
+	html {
+		font-size: 16px; /* Base for rem calculations: 1rem = 16px */
+		scroll-behavior: smooth;
+
+		@media (prefers-reduced-motion: reduce) {
+			scroll-behavior: auto;
+		}
+	}
+
+	body {
+		/* Typography */
+		font-family:
+			var(--font-iran-sans),
+			system-ui,
+			-apple-system,
+			BlinkMacSystemFont,
+			'Segoe UI',
+			Roboto,
+			'Helvetica Neue',
+			Arial,
+			sans-serif;
+		font-weight: 400;
+		font-size: 14px;
+		line-height: 1.5;
+
+		/* Direction */
+		direction: rtl;
+		text-align: right;
+
+		/* Rendering optimization */
+		-webkit-font-smoothing: antialiased;
+		-moz-osx-font-smoothing: grayscale;
+		text-rendering: optimizeLegibility;
+	}
+
+	/* Remove default outline, but keep focus visible for accessibility */
+	*:focus {
+		outline: none;
+	}
+
+	*:focus-visible {
+		outline: 2px solid var(--color-primary);
+		outline-offset: 2px;
+	}
+
+	/* Custom Scrollbar */
+	*::-webkit-scrollbar {
+		width: 0.25rem; /* 4px */
+		height: 0.1875rem; /* 3px */
+		background-image: linear-gradient(
+			90deg,
+			var(--color-surface-primary),
+			var(--color-surface-tertiary),
+			var(--color-surface-primary)
+		);
+		background-color: var(--color-surface-tertiary);
+	}
+
+	*::-webkit-scrollbar-thumb {
+		border-radius: 62.4375rem; /* 999px - effectively infinite */
+		background-image: linear-gradient(
+			90deg,
+			var(--color-surface-primary),
+			var(--color-primary),
+			var(--color-surface-primary)
+		);
+	}
+
+	/* Remove default button styles */
+	button {
+		font-family: inherit;
+		cursor: pointer;
+		border: none;
+		background: none;
+	}
+
+	/* Remove default input styles */
+	input,
+	textarea,
+	select {
+		font-family: inherit;
+		font-size: inherit;
+	}
+
+	/* Remove default list styles */
+	ul,
+	ol {
+		list-style: none;
+	}
+
+	/* Remove default link styles */
+	a {
+		color: inherit;
+		text-decoration: none;
+	}
+
+	/* Image defaults */
+	img,
+	picture,
+	video,
+	canvas,
+	svg {
+		display: block;
+		max-width: 100%;
+	}
+}

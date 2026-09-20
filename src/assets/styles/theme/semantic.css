@@ -1,0 +1,79 @@
+@theme {
+	/* ==============================* Semantic — Brand  *============================== */
+	--color-primary: var(--color-primary-50);
+	--color-primary-hover: var(--color-primary-60);
+	--color-primary-active: var(--color-primary-70);
+	--color-primary-disabled: var(--color-primary-40);
+
+	--color-secondary: var(--color-secondary-30);
+	--color-secondary-hover: var(--color-secondary-40);
+	--color-secondary-active: var(--color-secondary-50);
+	--color-secondary-disabled: var(--color-secondary-10);
+
+	--color-tertiary: var(--color-tertiary-60);
+	--color-tertiary-hover: var(--color-tertiary-70);
+	--color-tertiary-active: var(--color-tertiary-80);
+	--color-tertiary-disabled: var(--color-tertiary-40);
+
+	--color-success: var(--color-success-50);
+	--color-danger: var(--color-danger-50);
+	--color-warning: var(--color-warning-50);
+	--color-info: var(--color-info-50);
+
+	/* ==============================* Semantic — Surface  *============================== */
+	--color-surface-primary: var(--color-neutral-0);
+	--color-surface-secondary: var(--color-primary-5);
+	--color-surface-tertiary: var(--color-neutral-10);
+
+	/* ==============================* Semantic — Text  *============================== */
+	--color-text-primary: var(--color-neutral-90);
+	--color-text-secondary: var(--color-neutral-80);
+	--color-text-tertiary: var(--color-neutral-70);
+	--color-text-on-brand: var(--color-neutral-0);
+
+	/* ==============================* Semantic — Divider  *============================== */
+	--color-divider: var(--color-neutral-50);
+
+	/* ==============================* Semantic — Shadow  *============================== */
+	--shadow-color: rgb(15 23 42 / 0.12);
+}
+
+:root[data-theme='dark'] {
+	/* ==============================* Semantic — Brand  *============================== */
+	--color-primary: var(--color-primary-40);
+	--color-primary-hover: var(--color-primary-50);
+	--color-primary-active: var(--color-primary-60);
+	--color-primary-disabled: var(--color-primary-30);
+
+	--color-secondary: var(--color-secondary-50);
+	--color-secondary-hover: var(--color-secondary-40);
+	--color-secondary-active: var(--color-secondary-30);
+	--color-secondary-disabled: var(--color-secondary-60);
+
+	--color-tertiary: var(--color-tertiary-50);
+	--color-tertiary-hover: var(--color-tertiary-70);
+	--color-tertiary-active: var(--color-tertiary-80);
+	--color-tertiary-disabled: var(--color-tertiary-40);
+
+	--color-success: var(--color-success-50);
+	--color-danger: var(--color-danger-50);
+	--color-warning: var(--color-warning-50);
+	--color-info: var(--color-info-50);
+
+	/* ==============================* Semantic — Surface  *============================== */
+	--color-surface-primary: var(--color-neutral-80);
+	--color-surface-secondary: var(--color-neutral-70);
+	--color-surface-tertiary: var(--color-neutral-60);
+
+	/* ==============================* Semantic — Text  *============================== */
+	--color-text-primary: var(--color-neutral-5);
+	--color-text-secondary: var(--color-neutral-10);
+	--color-text-tertiary: var(--color-neutral-30);
+	--color-text-on-brand: var(--color-neutral-0);
+
+	/* ==============================* Semantic — Divider  *============================== */
+	--color-divider: var(--color-neutral-40);
+
+	/* ==============================* Semantic — Shadow  *============================== */
+	--shadow-color: rgb(0 0 0 / 0.5);
+}

@@ -1,0 +1,39 @@
+{
+	"compilerOptions": {
+		"target": "ES2017",
+		"lib": ["dom", "dom.iterable", "esnext"],
+		"strict": true,
+		"noImplicitAny": false,
+		"noUncheckedIndexedAccess": true,
+		"exactOptionalPropertyTypes": false,
+		"useUnknownInCatchVariables": true,
+		"skipLibCheck": true,
+		"noEmit": true,
+		"incremental": true,
+		"module": "esnext",
+		"moduleResolution": "bundler",
+		"resolveJsonModule": true,
+		"isolatedModules": true,
+		"jsx": "react-jsx",
+		"esModuleInterop": true,
+		"forceConsistentCasingInFileNames": true,
+		"paths": {
+			//---* Core standard (The Shadcn/Next.js default) *---//
+			"@/*": ["./src/*"],
+
+			//---* Root Access (If needed for configs) *---//
+			"@root/*": ["./*"]
+		},
+		"allowJs": true,
+		"plugins": [
+			{
+				"name": "next"
+			}
+		],
+		// _______________	Additional Options	_______________ //
+		"maxNodeModuleJsDepth": 0,
+		"verbatimModuleSyntax": false
+	},
+	"include": ["next-env.d.ts", "src/**/*.ts", "src/**/*.tsx", ".next/types/**/*.ts", ".next/dev/types/**/*.ts"],
+	"exclude": ["node_modules", "src/hooks/**", "src/sdk/mbaas/src/**"]
+}

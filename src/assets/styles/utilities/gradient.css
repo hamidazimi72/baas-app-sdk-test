@@ -1,0 +1,77 @@
+@layer utilities {
+	.gradient-bg-surface-primary {
+		background-color: var(--color-surface-primary) !important;
+		background: linear-gradient(
+			to bottom,
+			var(--color-surface-primary),
+			var(--color-surface-secondary),
+			var(--color-surface-primary)
+		);
+	}
+
+	.gradient-bg-surface-secondary {
+		background-color: var(--color-surface-secondary) !important;
+		background: linear-gradient(
+			to bottom,
+			var(--color-surface-secondary),
+			var(--color-surface-tertiary),
+			var(--color-surface-secondary)
+		);
+	}
+
+	/* _____________* gradient primary *_____________ */
+	.gradient-bg-primary {
+		/* background-color: #ff00ff; */
+		background: linear-gradient(0deg, var(--color-primary) 10%, var(--color-primary) 140%);
+	}
+
+	.gradient-bg-background {
+		background: linear-gradient(180deg, var(--color-surface-tertiary) 60%, var(--color-secondary) 200%);
+	}
+
+	.gradient-text-primary {
+		color: transparent;
+		background-clip: text;
+		background-image: linear-gradient(242.37deg, var(--color-primary) 39.07%, var(--color-primary) 75.9%);
+	}
+
+	.gradient-border-primary {
+		border-image: linear-gradient(242.37deg, var(--color-primary), var(--color-primary)) 1;
+	}
+
+	.gradient-aside {
+		@apply bg-linear-160 from-primary/60 via-primary/60 to-primary-active/20;
+	}
+
+	/* Repeating dot texture — used as a backdrop layer under .gradient-aside.
+	   Tune everything via the CSS vars below (size = dot diameter, gap = spacing, color = dot color+opacity). */
+	.bg-dots {
+		--dot-color: rgb(126 126 126 / 0.12);
+		--dot-size: 4px;
+		--dot-gap: 22px;
+		background-image: radial-gradient(
+			circle,
+			var(--dot-color) calc(var(--dot-size) / 2),
+			transparent calc(var(--dot-size) / 2)
+		);
+		background-size: var(--dot-gap) var(--dot-gap);
+	}
+
+	.gradient-text-brand {
+		color: var(--color-primary);
+
+		position: relative;
+		display: inline-block;
+
+		background: linear-gradient(
+			to bottom,
+			var(--color-primary) 0%,
+			var(--color-primary) 50%,
+			var(--color-surface-primary) 110%
+		);
+		-webkit-background-clip: text;
+		background-clip: text;
+		color: transparent;
+		-webkit-text-fill-color: transparent;
+	}
+}

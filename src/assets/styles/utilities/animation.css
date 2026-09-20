@@ -1,0 +1,193 @@
+@layer utilities {
+	/* ___________________ CLASSNAME ___________________ */
+	.animate-status-flash {
+		animation: flash 0.7s ease 2;
+	}
+
+	.animate-flash {
+		animation: flash 1s ease infinite;
+	}
+
+	.animate-holder {
+		background-color: transparent;
+		background-size: 500% !important;
+		animation: holder 1.5s infinite !important;
+	}
+
+	.animate-modal-enter {
+		animation: fade-in 0.2s ease 1;
+
+		& > * {
+			animation: enter-top 0.4s ease 1;
+		}
+	}
+
+	.animate-modal-enter-left {
+		animation: fade-in 0.2s ease 1;
+
+		& > * {
+			animation: enter-left 0.4s ease 1;
+		}
+	}
+
+	.animate-modal-enter-right {
+		animation: fade-in 0.2s ease 1;
+
+		& > * {
+			animation: enter-right 0.4s ease 1;
+		}
+	}
+
+	.animate-opacity-enter {
+		animation: fade-in 2.2s ease 1;
+	}
+
+	.animate-modal-leave {
+		opacity: 0;
+		overflow-y: hidden;
+
+		animation: fade-out 0.4s ease 1;
+
+		& > * {
+			animation: leave-bottom 0.4s ease 1;
+		}
+	}
+
+	.animate-modal-leave-left {
+		opacity: 0;
+		overflow-y: hidden;
+
+		animation: fade-out 0.4s ease 1;
+
+		& > * {
+			animation: leave-left 0.4s ease 1;
+		}
+	}
+
+	/* ___________________ KEYFRAMES ___________________ */
+	@keyframes flash {
+		0% {
+			opacity: 1;
+		}
+		50% {
+			opacity: 0;
+		}
+		100% {
+			opacity: 1;
+		}
+	}
+
+	@keyframes fade-in {
+		0% {
+			opacity: 0;
+		}
+		100% {
+			opacity: 1;
+		}
+	}
+
+	@keyframes fade-out {
+		0% {
+			opacity: 1;
+		}
+		100% {
+			opacity: 0;
+		}
+	}
+
+	@keyframes holder {
+		0% {
+			opacity: 0;
+			background-position: 0 0;
+		}
+		100% {
+			opacity: 1;
+			background-position: 100% 100%;
+		}
+	}
+
+	@keyframes enter-top {
+		0% {
+			transform: translateY(-50vh);
+		}
+		100% {
+			transform: translateY(0);
+		}
+	}
+
+	@keyframes enter-left {
+		0% {
+			transform: translateX(-50vw);
+		}
+		100% {
+			transform: translateX(0);
+		}
+	}
+
+	@keyframes enter-right {
+		0% {
+			transform: translateX(50vw);
+		}
+		100% {
+			transform: translateX(0);
+		}
+	}
+
+	@keyframes leave-bottom {
+		0% {
+			transform: translateY(0);
+		}
+		100% {
+			transform: translateY(50vh);
+		}
+	}
+
+	@keyframes leave-left {
+		0% {
+			transform: translateX(0);
+		}
+		100% {
+			transform: translateX(-50vw);
+		}
+	}
+
+	@keyframes leave-right {
+		0% {
+			transform: translateX(0);
+		}
+		100% {
+			transform: translateX(50vw);
+		}
+	}
+
+	/* ___________________ ADDITIONAL ___________________ */
+	.animate-fade-up {
+		animation: fade-up 0.25s ease-out 1;
+	}
+
+	.animate-scale-in {
+		animation: scale-in 0.2s ease-out 1;
+	}
+
+	@keyframes fade-up {
+		0% {
+			transform: translateY(6px);
+			opacity: 0;
+		}
+		100% {
+			transform: translateY(0);
+			opacity: 1;
+		}
+	}
+
+	@keyframes scale-in {
+		0% {
+			transform: scale(0.97);
+			opacity: 0;
+		}
+		100% {
+			transform: scale(1);
+			opacity: 1;
+		}
+	}
+}

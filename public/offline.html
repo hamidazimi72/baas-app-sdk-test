@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+		<title>آفلاین | NextJS</title>
+		<style>
+			:root {
+				color-scheme: light dark;
+				--bg: #f8fafc;
+				--surface: #ffffff;
+				--text: #0f172a;
+				--muted: #64748b;
+				--primary: #00b1f0;
+				--border: #e2e8f0;
+			}
+			@media (prefers-color-scheme: dark) {
+				:root {
+					--bg: #0b1120;
+					--surface: #1e293b;
+					--text: #f1f5f9;
+					--muted: #94a3b8;
+					--primary: #818cf8;
+					--border: #334155;
+				}
+			}
+			* {
+				box-sizing: border-box;
+			}
+			html,
+			body {
+				margin: 0;
+				height: 100%;
+			}
+			body {
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				min-height: 100dvh;
+				padding: 24px;
+				background: var(--bg);
+				color: var(--text);
+				font-family:
+					system-ui,
+					-apple-system,
+					'Segoe UI',
+					Tahoma,
+					sans-serif;
+			}
+			.card {
+				width: 100%;
+				max-width: 420px;
+				padding: 40px 28px;
+				text-align: center;
+				background: var(--surface);
+				border: 1px solid var(--border);
+				border-radius: 20px;
+				box-shadow: 0 12px 40px rgba(15, 23, 42, 0.08);
+			}
+			.icon {
+				display: inline-flex;
+				align-items: center;
+				justify-content: center;
+				width: 72px;
+				height: 72px;
+				margin-bottom: 20px;
+				border-radius: 50%;
+				background: color-mix(in srgb, var(--primary) 12%, transparent);
+				color: var(--primary);
+			}
+			h1 {
+				margin: 0 0 8px;
+				font-size: 20px;
+				font-weight: 700;
+			}
+			p {
+				margin: 0 0 24px;
+				font-size: 14px;
+				line-height: 1.7;
+				color: var(--muted);
+			}
+			button {
+				width: 100%;
+				padding: 12px 20px;
+				font-size: 15px;
+				font-weight: 600;
+				color: #fff;
+				background: var(--primary);
+				border: 0;
+				border-radius: 12px;
+				cursor: pointer;
+				transition: opacity 0.2s ease;
+			}
+			button:hover {
+				opacity: 0.9;
+			}
+		</style>
+	</head>
+	<body>
+		<main class="card">
+			<div class="icon" aria-hidden="true">
+				<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<path d="M1 1l22 22" />
+					<path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55" />
+					<path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39" />
+					<path d="M10.71 5.05A16 16 0 0 1 22.58 9" />
+					<path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88" />
+					<path d="M8.53 16.11a6 6 0 0 1 6.95 0" />
+					<line x1="12" y1="20" x2="12.01" y2="20" />
+				</svg>
+			</div>
+			<h1>اتصال اینترنت برقرار نیست</h1>
+			<p>به نظر می‌رسد آفلاین هستید. لطفاً اتصال خود را بررسی کرده و دوباره تلاش کنید.</p>
+			<button type="button" onclick="location.reload()">تلاش مجدد</button>
+		</main>
+	</body>
+</html>

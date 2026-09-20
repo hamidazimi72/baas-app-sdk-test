@@ -1,0 +1,102 @@
+@theme {
+	/* ===============================* Primitive (Brand) *=============================== */
+	/* High-tech SaaS palette — Sky-Cyan primary · warm tan secondary. */
+
+	/* Primary */
+	--color-primary-5: #f6f6fe;
+	--color-primary-10: #e4e4fa;
+	--color-primary-20: #cdcdf4;
+	--color-primary-30: #b1b1eb;
+	--color-primary-40: #8e8ede;
+	--color-primary-50: #6565ce;
+	--color-primary-60: #3b3bb5;
+	--color-primary-70: #26267f;
+	--color-primary-80: #121248;
+	--color-primary-90: #02020d;
+
+	/* Secondary */
+	--color-secondary-5: #fff7eb;
+	--color-secondary-10: #feefd8;
+	--color-secondary-20: #fce4c0;
+	--color-secondary-30: #f8d5a1;
+	--color-secondary-40: #f3c37c;
+	--color-secondary-50: #ecae50;
+	--color-secondary-60: #e6951b;
+	--color-secondary-70: #af7011;
+	--color-secondary-80: #744908;
+	--color-secondary-90: #372101;
+
+	/* Tertiary */
+	--color-tertiary-5: #fffbeb;
+	--color-tertiary-10: #fef3c7;
+	--color-tertiary-20: #fde68a;
+	--color-tertiary-30: #fcd34d;
+	--color-tertiary-40: #fbbf24;
+	--color-tertiary-50: #f59e0b;
+	--color-tertiary-60: #d97706;
+	--color-tertiary-70: #b45309;
+	--color-tertiary-80: #92400e;
+	--color-tertiary-90: #78350f;
+
+	/* Success — Emerald */
+	--color-success-5: #ecfdf5;
+	--color-success-10: #d1fae5;
+	--color-success-20: #a7f3d0;
+	--color-success-30: #6ee7b7;
+	--color-success-40: #34d399;
+	--color-success-50: #10b981;
+	--color-success-60: #059669;
+	--color-success-70: #047857;
+	--color-success-80: #065f46;
+	--color-success-90: #064e3b;
+
+	/* Danger — Red */
+	--color-danger-5: #fef2f2;
+	--color-danger-10: #fee2e2;
+	--color-danger-20: #fecaca;
+	--color-danger-30: #fca5a5;
+	--color-danger-40: #f87171;
+	--color-danger-50: #ef4444;
+	--color-danger-60: #dc2626;
+	--color-danger-70: #b91c1c;
+	--color-danger-80: #991b1b;
+	--color-danger-90: #7f1d1d;
+
+	/* Warning — Amber/Gold */
+	--color-warning-5: #fffbeb;
+	--color-warning-10: #fef3c7;
+	--color-warning-20: #fde68a;
+	--color-warning-30: #fcd34d;
+	--color-warning-40: #fbbf24;
+	--color-warning-50: #f59e0b;
+	--color-warning-60: #d97706;
+	--color-warning-70: #b45309;
+	--color-warning-80: #92400e;
+	--color-warning-90: #78350f;
+
+	/* Info — Sky */
+	--color-info-5: #f0f9ff;
+	--color-info-10: #e0f2fe;
+	--color-info-20: #7dd3fc;
+	--color-info-30: #38bdf8;
+	--color-info-40: #0ea5e9;
+	--color-info-50: #0284c7;
+	--color-info-60: #0369a1;
+	--color-info-70: #075985;
+	--color-info-80: #0c4a6e;
+	--color-info-90: #082f49;
+
+	/* Neutral — Cool Slate */
+	--color-neutral-0: #ffffff;
+	--color-neutral-5: #fafafa;
+	--color-neutral-10: #e9eaeb;
+	--color-neutral-15: #d5d7da;
+	--color-neutral-20: #e9eaeb;
+	--color-neutral-30: #a4a7ae;
+	--color-neutral-40: #717680;
+	--color-neutral-50: #535862;
+	--color-neutral-60: #414651;
+	--color-neutral-70: #252b37;
+	--color-neutral-80: #181d27;
+	--color-neutral-90: #1a1a1a;
+}

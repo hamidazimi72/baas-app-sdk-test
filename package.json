@@ -1,0 +1,78 @@
+{
+	"name": "next-js",
+	"private": true,
+	"license": "MIT",
+	"packageManager": "npm@10",
+	"author": "Mahmoodi:RminMH@gmail.com",
+	"scripts": {
+		"dev": "next dev --turbopack",
+		"start": "next start",
+		"build:sw": "esbuild src/app/sw.ts --bundle --minify --format=iife --platform=browser --target=es2020 --outfile=public/sw.js",
+		"prebuild": "npm run build:sw",
+		"build": "next build",
+		"postbuild": "node scripts/copy-standalone-assets.mjs",
+		"deploy": "npm run build && npm run start",
+		"clean": "node -e \"const fs = require('fs'); ['.next', 'out', 'node_modules/.cache'].forEach(p => fs.rmSync(p, { recursive: true, force: true }))\"",
+		"pretty": "prettier --write \"src/**/*.{js,jsx,ts,tsx,css,scss,json,md}\"",
+		"lint": "eslint src",
+		"typecheck": "tsc --noEmit",
+		"test": "vitest run --passWithNoTests",
+		"test:watch": "vitest",
+		"test:coverage": "vitest run --coverage --passWithNoTests",
+		"format:check": "prettier --check \"src/**/*.{js,jsx,ts,tsx,css,scss,json,md}\"",
+		"format:write": "prettier --write \"src/**/*.{js,jsx,ts,tsx,css,scss,json,md}\"",
+		"validate": "npm run typecheck && npm run lint && npm run format:check && npm run test",
+		"prepare": "husky"
+	},
+	"lint-staged": {
+		"src/**/*.{js,jsx,ts,tsx,css,scss,json,md}": [
+			"prettier --write"
+		]
+	},
+	"dependencies": {
+		"@tanstack/react-query": "^5.101.1",
+		"@tanstack/react-query-devtools": "^5.101.1",
+		"clsx": "^2.1.1",
+		"framer-motion": "^12.40.0",
+		"jalali-moment": "^3.3.11",
+		"lucide-react": "^1.21.0",
+		"new-sdk": "file:src/sdk/mbaas",
+		"next": "^16.2.9",
+		"next-themes": "^0.4.6",
+		"react": "^19.2.7",
+		"react-dom": "^19.2.7",
+		"sonner": "^2.0.7",
+		"swiper": "^12.2.0",
+		"tailwind-merge": "^3.6.0",
+		"zod": "^4.4.3",
+		"zustand": "^5.0.14"
+	},
+	"devDependencies": {
+		"@tailwindcss/postcss": "^4.3.1",
+		"@types/node": "^25.9.4",
+		"@types/react": "^19.2.17",
+		"@vitest/coverage-v8": "^4.1.9",
+		"esbuild": "^0.28.1",
+		"eslint": "^9.39.4",
+		"eslint-config-next": "^16.2.9",
+		"eslint-plugin-react-hooks": "^7.1.1",
+		"husky": "^9.1.7",
+		"lint-staged": "^17.0.8",
+		"postcss": "^8.5.15",
+		"prettier": "^3.8.4",
+		"tailwindcss": "^4.3.0",
+		"typescript": "^6.0.3",
+		"typescript-eslint": "^8.61.1",
+		"vitest": "^4.1.9"
+	},
+	"browserslist": [
+		"> 0.5%",
+		"last 2 versions",
+		"not dead",
+		"not op_mini all"
+	],
+	"engines": {
+		"node": ">=20.0.0",
+		"npm": ">=10.0.0"
+	}
+}

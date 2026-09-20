@@ -1,0 +1,126 @@
+@layer components {
+	/* ===== Sonner Base ===== */
+	[data-sonner-toaster] {
+		/* ===== Sonner Colors ===== */
+		--normal-bg: var(--color-surface-secondary) !important;
+		--normal-text: var(--color-text-primary) !important;
+		--normal-border: var(--color-divider) !important;
+
+		--success-bg: var(--color-success) !important;
+		--success-text: var(--color-neutral-0) !important;
+		--success-border: var(--color-success) !important;
+
+		--error-bg: var(--color-danger) !important;
+		--error-text: var(--color-neutral-0) !important;
+		--error-border: var(--color-danger) !important;
+
+		--warning-bg: var(--color-warning) !important;
+		--warning-text: var(--color-neutral-90) !important;
+		--warning-border: var(--color-warning) !important;
+
+		--info-bg: var(--color-info) !important;
+		--info-text: var(--color-neutral-0) !important;
+		--info-border: var(--color-info) !important;
+
+		font-family: inherit !important;
+		z-index: 99999 !important;
+		cursor: grab !important;
+		user-select: none !important;
+	}
+
+	/* ===== Toast Container ===== */
+	[data-sonner-toast] {
+		background: var(--color-surface-secondary) !important;
+		color: var(--color-text-primary) !important;
+
+		border: 1px solid var(--color-divider) !important;
+		border-radius: 12px !important;
+
+		box-shadow:
+			0 10px 30px rgba(0, 0, 0, 0.25),
+			0 2px 8px rgba(0, 0, 0, 0.15) !important;
+
+		padding: 12px 14px !important;
+
+		backdrop-filter: blur(8px) !important;
+
+		transition: all 0.25s ease !important;
+	}
+
+	/* Hover */
+	[data-sonner-toast]:hover {
+		/* transform: translateY(-2px) scale(1.01) !important; */
+		box-shadow:
+			0 7px 20px rgba(0, 0, 0, 0.6),
+			0 2px 6px rgba(0, 0, 0, 0.3) !important;
+	}
+
+	/* ===== Title ===== */
+	[data-sonner-toast] [data-title] {
+		font-size: 14px !important;
+		font-weight: 500 !important;
+		color: var(--color-text-primary);
+	}
+
+	/* ===== Description ===== */
+	[data-sonner-toast] [data-description] {
+		font-size: 13px !important;
+		color: var(--color-text-secondary);
+		margin-top: 2px !important;
+	}
+
+	/* ===== Close Button ===== */
+	[data-sonner-toast] button[data-close-button] {
+		background: white !important;
+		color: var(--color-danger) !important;
+		border-radius: 9999px !important;
+		width: 25px !important;
+		height: 25px !important;
+
+		transition: all 0.2s ease !important;
+	}
+
+	[data-sonner-toast] button[data-close-button]:hover {
+		background: var(--color-danger) !important;
+		color: white !important;
+		/* transform: rotate(90deg); */
+	}
+
+	/* ===== Progress Bar ===== */
+	[data-sonner-toast] [data-progress] {
+		background: var(--color-primary) !important;
+		height: 2px !important;
+		border-radius: 9999px !important;
+	}
+
+	/* ===== Types (Solid Variants) ===== */
+	[data-sonner-toast][data-type='success'] {
+		background: var(--color-success) !important;
+		color: white !important;
+		border: none !important;
+	}
+
+	[data-sonner-toast][data-type='error'] {
+		background: var(--color-danger) !important;
+		color: white !important;
+		border: none !important;
+	}
+
+	[data-sonner-toast][data-type='warning'] {
+		background: var(--color-warning) !important;
+		color: black !important;
+		border: none !important;
+	}
+
+	[data-sonner-toast][data-type='info'] {
+		background: var(--color-info) !important;
+		color: white !important;
+		border: none !important;
+	}
+
+	/* ===== Swipe Feedback ===== */
+	/* [data-sonner-toast][data-swipe='move'] {
+		opacity: 0.7 !important;
+		transform: scale(0.98) !important;
+	} */
+}

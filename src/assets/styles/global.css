@@ -1,0 +1,12 @@
+/* ================================ Styles ================================ */
+@import 'tailwindcss';
+
+@source not "../../../**/*.md";
+
+@import './theme/index.css';
+@import './base/index.css';
+@import './utilities/index.css';
+@import './components/index.css';
+
+/* ================================ Custom Variant ================================ */
+@custom-variant dark (&:is([data-theme="dark"] *));

@@ -1,0 +1,67 @@
+{
+  "name": "new-sdk",
+  "version": "1.0.0",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.esm.js",
+      "require": "./dist/index.cjs",
+      "default": "./dist/index.esm.js"
+    },
+    "./core": {
+      "types": "./dist/core/core.d.ts",
+      "import": "./dist/core/core.esm.js",
+      "require": "./dist/core/core.cjs",
+      "default": "./dist/core/core.esm.js"
+    },
+    "./auth": {
+      "types": "./dist/auth/auth.d.ts",
+      "import": "./dist/auth/auth.esm.js",
+      "require": "./dist/auth/auth.cjs",
+      "default": "./dist/auth/auth.esm.js"
+    },
+    "./push": {
+      "types": "./dist/push/push.d.ts",
+      "import": "./dist/push/push.esm.js",
+      "require": "./dist/push/push.cjs",
+      "default": "./dist/push/push.esm.js"
+    },
+    "./analytics": {
+      "types": "./dist/analytics/analytics.d.ts",
+      "import": "./dist/analytics/analytics.esm.js",
+      "require": "./dist/analytics/analytics.cjs",
+      "default": "./dist/analytics/analytics.esm.js"
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.esm.js",
+  "types": "./dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "core": ["dist/core/core.d.ts"],
+      "auth": ["dist/auth/auth.d.ts"],
+      "push": ["dist/push/push.d.ts"],
+      "analytics": ["dist/analytics/analytics.d.ts"]
+    }
+  },
+  "scripts": {
+    "build": "rollup -c",
+    "build:core": "rollup -c --environment TARGET:core",
+    "build:auth": "rollup -c --environment TARGET:auth",
+    "build:push": "rollup -c --environment TARGET:push",
+    "build:analytics": "rollup -c --environment TARGET:analytics",
+    "dev": "rollup -c --watch"
+  },
+  "devDependencies": {
+    "@rollup/plugin-terser": "^0.4.4",
+    "@rollup/plugin-typescript": "^11.1.6",
+    "rollup": "^4.0.0",
+    "rollup-plugin-dts": "^6.1.0",
+    "tslib": "^2.6.2",
+    "typescript": "^5.4.0"
+  }
+}
