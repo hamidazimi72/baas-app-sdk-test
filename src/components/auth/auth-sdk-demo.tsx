@@ -29,8 +29,8 @@ type FormState = {
 	age: string;
 };
 
-const googleClientId = '1083823337502-k9e8dgudvgjsdjtb0dl4oolcfmevuulg.apps.googleusercontent.com';
-const googleClientSecret = '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';
+const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? '';
+const googleClientSecret = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_SECRET ?? '';
 const initialForm: FormState = {
 	email: '',
 	phone: '',
