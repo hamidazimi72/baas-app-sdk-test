@@ -3,6 +3,7 @@ interface RequestOptions {
     url: string;
     headers?: Record<string, string>;
     body?: unknown;
+    signal?: AbortSignal;
 }
 declare class HttpError extends Error {
     readonly status: number;
@@ -10,7 +11,7 @@ declare class HttpError extends Error {
     constructor(status: number, body: unknown, statusText?: string);
 }
 declare class FetchHttpClient {
-    request<T = unknown>({ method, url, headers, body }: RequestOptions): Promise<T>;
+    request<T = unknown>({ method, url, headers, body, signal }: RequestOptions): Promise<T>;
     private parseResponseBody;
 }
 
@@ -25,11 +26,22 @@ interface CoreSdkConfig {
 }
 interface DeviceData {
     token: string;
+    installationId: string;
+    expiresAt: number;
     status: string;
 }
 interface DeviceRegisterResponse {
     success: boolean;
     data?: DeviceData;
+    [key: string]: unknown;
+}
+interface DeviceTokenRefreshResponse {
+    success: boolean;
+    data?: DeviceData;
+    [key: string]: unknown;
+}
+interface DeviceDeactivateResponse {
+    success: boolean;
     [key: string]: unknown;
 }
 declare class CoreSdk {
@@ -43,6 +55,8 @@ declare class CoreSdk {
     private readonly storage;
     private readonly deviceInfo;
     private initializationPromise;
+    private tokenExpiryCheckPromise;
+    private tokenRefreshPromise;
     constructor(config: CoreSdkConfig);
     private getApiKeyHeader;
     private areDeviceInfoEqual;
@@ -67,6 +81,13 @@ declare class CoreSdk {
         deviceTimezone?: string | null;
         deviceLanguage?: string | null;
     }): Promise<Record<string, any>>;
+    /** Refreshes the existing installation token and persists its token and expiration. */
+    refreshInstallationToken(): Promise<DeviceTokenRefreshResponse>;
+    private refreshInstallationTokenInternal;
+    private refreshInstallationTokenIfNeeded;
+    private checkInstallationTokenExpiry;
+    /** Deactivates the existing device and clears its installation token on success. */
+    deactivateDevice(): Promise<DeviceDeactivateResponse | null>;
     getWebSocketUrl(): string;
     private assertWebSocketUrl;
     ensureInstallationToken(): Promise<string>;
@@ -92,11 +113,13 @@ declare class BrowserStorage {
     private readonly prefix;
     constructor(prefix?: string);
     private get installationTokenKey();
+    private get installationTokenExpiresAtKey();
     private get authTokenKey();
     private get deviceInfoKey();
     private get sessionStartKey();
     getInstallationToken(): Promise<string | null>;
-    setInstallationToken(token: string): Promise<void>;
+    getInstallationTokenExpiresAt(): Promise<number | null>;
+    setInstallationToken(token: string, expiresAt?: number): Promise<void>;
     clearInstallationToken(): Promise<void>;
     getAuthToken(): Promise<string | null>;
     setAuthToken(token: string): Promise<void>;
@@ -108,4 +131,4 @@ declare class BrowserStorage {
 }
 
 export { BrowserStorage, CoreSdk, FetchHttpClient, HttpError };
-export type { CoreSdkConfig, DeviceData, DeviceRegisterResponse, RequestOptions };
+export type { CoreSdkConfig, DeviceData, DeviceDeactivateResponse, DeviceRegisterResponse, DeviceTokenRefreshResponse, RequestOptions };

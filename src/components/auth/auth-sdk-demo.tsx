@@ -1,6 +1,7 @@
 'use client';
 
-import { FormEvent, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
+import type { FormEvent } from 'react';
 import type { AuthSdk, CoreSdk } from 'new-sdk';
 import { PrimaryButton } from '@/components/atom/buttons';
 import { PrimaryInput } from '@/components/atom/inputs';
@@ -10,6 +11,11 @@ import { useMbaasSdk } from '@/sdk';
 type Mode = 'register' | 'login' | 'recovery' | 'profile' | 'device' | 'convert' | 'logout';
 type Method = 'email' | 'phone' | 'google' | 'myGov' | 'anonymous';
 type Step = 'credentials' | 'otp';
+type QueuedEvent = {
+	eventName: string;
+	eventParams?: Record<string, string | number | boolean>;
+	enqueuedAt: number;
+};
 type FormState = {
 	email: string;
 	phone: string;
@@ -96,6 +102,8 @@ const serializeError = (error: unknown) => {
 		...(value.body !== undefined ? { body: value.body } : {}),
 	};
 };
+const getAnalyticsEventName = (eventName: string) =>
+	`custom_event_${eventName.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toLowerCase()}`;
 const extractUserId = (value: unknown) => {
 	if (!value || typeof value !== 'object' || !('data' in value)) return null;
 	const data = (value as { data?: unknown }).data;
@@ -130,6 +138,7 @@ export function AuthSdkDemo() {
 	const [form, setForm] = useState<FormState>(initialForm);
 	const [authenticatedUserId, setAuthenticatedUserId] = useState('');
 	const [response, setResponse] = useState<unknown>(null);
+	const [latestQueuedEvent, setLatestQueuedEvent] = useState<QueuedEvent | null>(null);
 	const [loading, setLoading] = useState(false);
 	const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | null>(null);
 	useEffect(() => {
@@ -144,6 +153,16 @@ export function AuthSdkDemo() {
 		if (!('Notification' in window)) alert('Notification no exist in window 2');
 		const permission = await Notification.requestPermission();
 		setNotificationPermission(permission);
+	};
+	const logTestEvent = async () => {
+		if (!analytics) return;
+		const queuedEvent: QueuedEvent = {
+			eventName: 'custom_event_skip',
+			eventParams: { random_value: crypto.randomUUID() },
+			enqueuedAt: Date.now(),
+		};
+		await analytics.logEvent(queuedEvent.eventName, queuedEvent.eventParams);
+		setLatestQueuedEvent(queuedEvent);
 	};
 	const update = (key: keyof FormState, value: string) => setForm((current) => ({ ...current, [key]: value }));
 	const applyProfileResponse = (value: unknown) => {
@@ -176,7 +195,13 @@ export function AuthSdkDemo() {
 			if (ok) onSuccess?.(result);
 			if (ok && eventName && analytics) {
 				try {
-					await analytics.logEvent(`EVENT_${eventName}`, eventParams);
+					const queuedEvent = {
+						eventName: getAnalyticsEventName(eventName),
+						eventParams,
+						enqueuedAt: Date.now(),
+					};
+					await analytics.logEvent(queuedEvent.eventName, eventParams);
+					setLatestQueuedEvent(queuedEvent);
 				} catch {
 					// Analytics failure must not turn a successful Auth operation into a failure.
 				}
@@ -753,6 +778,22 @@ export function AuthSdkDemo() {
 						className='min-h-80 rounded-xl bg-surface-secondary/70 p-4 text-left text-xs leading-6 text-text-primary whitespace-pre-wrap break-all'
 					>
 						{response ? JSON.stringify(response, null, 2) : '// response اینجا نمایش داده می‌شود'}
+					</pre>
+				</section>
+				<section className='rounded-xl border border-divider/30 bg-surface-primary p-4 shadow-sm md:p-6 lg:col-span-2'>
+					<div className='mb-4 flex flex-wrap items-center justify-between gap-3'>
+						<h2 className='text-lg font-semibold text-text-primary'>Latest queued event</h2>
+						<PrimaryButton type='button' size='sm' onClick={() => void logTestEvent()} disabled={!analytics}>
+							ارسال لاگ تستی
+						</PrimaryButton>
+					</div>
+					<pre
+						dir='ltr'
+						className='min-h-24 rounded-xl bg-surface-secondary/70 p-4 text-left text-xs leading-6 text-text-primary whitespace-pre-wrap break-all'
+					>
+						{latestQueuedEvent
+							? JSON.stringify(latestQueuedEvent, null, 2)
+							: '// The latest queued analytics event will be displayed here'}
 					</pre>
 				</section>
 			</div>

@@ -3,6 +3,8 @@ export type {
   CoreSdkConfig,
   DeviceData,
   DeviceRegisterResponse,
+  DeviceTokenRefreshResponse,
+  DeviceDeactivateResponse,
   RequestOptions,
 } from "./core/index.js";
 
@@ -14,6 +16,9 @@ export type { PushPayload, PushSdkErrorListener } from "./push/index.js";
 
 export { AnalyticsSdk } from "./analytics/index.js";
 export type {
+  AnalyticsClientDiagnostics,
+  AnalyticsCollectEvent,
+  AnalyticsCollectRequest,
   AnalyticsCollectResponse,
   AnalyticsIdentityAction,
   AnalyticsIdentityResponse,

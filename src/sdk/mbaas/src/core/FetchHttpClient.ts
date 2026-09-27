@@ -3,6 +3,7 @@ export interface RequestOptions {
   url: string;
   headers?: Record<string, string>;
   body?: unknown;
+  signal?: AbortSignal;
 }
 
 export class HttpError extends Error {
@@ -19,11 +20,12 @@ export class HttpError extends Error {
 }
 
 export class FetchHttpClient {
-  async request<T = unknown>({ method, url, headers = {}, body }: RequestOptions): Promise<T> {
+  async request<T = unknown>({ method, url, headers = {}, body, signal }: RequestOptions): Promise<T> {
     const response = await fetch(url, {
       method,
       headers,
       body: body !== undefined ? JSON.stringify(body) : undefined,
+      signal,
     });
 
     const responseBody = await this.parseResponseBody(response);

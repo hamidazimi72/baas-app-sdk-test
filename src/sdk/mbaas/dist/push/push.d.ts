@@ -3,6 +3,7 @@ interface RequestOptions {
     url: string;
     headers?: Record<string, string>;
     body?: unknown;
+    signal?: AbortSignal;
 }
 
 interface CoreSdkConfig {
@@ -16,11 +17,22 @@ interface CoreSdkConfig {
 }
 interface DeviceData {
     token: string;
+    installationId: string;
+    expiresAt: number;
     status: string;
 }
 interface DeviceRegisterResponse {
     success: boolean;
     data?: DeviceData;
+    [key: string]: unknown;
+}
+interface DeviceTokenRefreshResponse {
+    success: boolean;
+    data?: DeviceData;
+    [key: string]: unknown;
+}
+interface DeviceDeactivateResponse {
+    success: boolean;
     [key: string]: unknown;
 }
 declare class CoreSdk {
@@ -34,6 +46,8 @@ declare class CoreSdk {
     private readonly storage;
     private readonly deviceInfo;
     private initializationPromise;
+    private tokenExpiryCheckPromise;
+    private tokenRefreshPromise;
     constructor(config: CoreSdkConfig);
     private getApiKeyHeader;
     private areDeviceInfoEqual;
@@ -58,6 +72,13 @@ declare class CoreSdk {
         deviceTimezone?: string | null;
         deviceLanguage?: string | null;
     }): Promise<Record<string, any>>;
+    /** Refreshes the existing installation token and persists its token and expiration. */
+    refreshInstallationToken(): Promise<DeviceTokenRefreshResponse>;
+    private refreshInstallationTokenInternal;
+    private refreshInstallationTokenIfNeeded;
+    private checkInstallationTokenExpiry;
+    /** Deactivates the existing device and clears its installation token on success. */
+    deactivateDevice(): Promise<DeviceDeactivateResponse | null>;
     getWebSocketUrl(): string;
     private assertWebSocketUrl;
     ensureInstallationToken(): Promise<string>;

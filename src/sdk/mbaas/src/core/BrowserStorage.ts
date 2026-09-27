@@ -66,6 +66,10 @@ export class BrowserStorage {
     return `${this.prefix}:installation_token`;
   }
 
+  private get installationTokenExpiresAtKey(): string {
+    return `${this.prefix}:installation_token_expires_at`;
+  }
+
   private get authTokenKey(): string {
     return `${this.prefix}:auth_token`;
   }
@@ -82,13 +86,29 @@ export class BrowserStorage {
     return window.localStorage.getItem(this.installationTokenKey);
   }
 
-  async setInstallationToken(token: string): Promise<void> {
+  async getInstallationTokenExpiresAt(): Promise<number | null> {
+    const storedExpiresAt = window.localStorage.getItem(this.installationTokenExpiresAtKey);
+    if (storedExpiresAt === null || storedExpiresAt.trim() === "") {
+      return null;
+    }
+
+    const expiresAt = Number(storedExpiresAt);
+    return Number.isFinite(expiresAt) ? expiresAt : null;
+  }
+
+  async setInstallationToken(token: string, expiresAt?: number): Promise<void> {
     window.localStorage.setItem(this.installationTokenKey, token);
+    if (expiresAt !== undefined && Number.isFinite(expiresAt)) {
+      window.localStorage.setItem(this.installationTokenExpiresAtKey, String(expiresAt));
+    } else {
+      window.localStorage.removeItem(this.installationTokenExpiresAtKey);
+    }
     await setInstallationTokenInIndexedDb(this.installationTokenKey, token);
   }
 
   async clearInstallationToken(): Promise<void> {
     window.localStorage.removeItem(this.installationTokenKey);
+    window.localStorage.removeItem(this.installationTokenExpiresAtKey);
     await clearInstallationTokenFromIndexedDb(this.installationTokenKey);
   }
 

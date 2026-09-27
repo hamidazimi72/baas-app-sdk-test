@@ -8,11 +8,12 @@ class HttpError extends Error {
     }
 }
 class FetchHttpClient {
-    async request({ method, url, headers = {}, body }) {
+    async request({ method, url, headers = {}, body, signal }) {
         const response = await fetch(url, {
             method,
             headers,
             body: body !== undefined ? JSON.stringify(body) : undefined,
+            signal,
         });
         const responseBody = await this.parseResponseBody(response);
         if (!response.ok) {
@@ -88,6 +89,9 @@ class BrowserStorage {
     get installationTokenKey() {
         return `${this.prefix}:installation_token`;
     }
+    get installationTokenExpiresAtKey() {
+        return `${this.prefix}:installation_token_expires_at`;
+    }
     get authTokenKey() {
         return `${this.prefix}:auth_token`;
     }
@@ -100,12 +104,27 @@ class BrowserStorage {
     async getInstallationToken() {
         return window.localStorage.getItem(this.installationTokenKey);
     }
-    async setInstallationToken(token) {
+    async getInstallationTokenExpiresAt() {
+        const storedExpiresAt = window.localStorage.getItem(this.installationTokenExpiresAtKey);
+        if (storedExpiresAt === null || storedExpiresAt.trim() === "") {
+            return null;
+        }
+        const expiresAt = Number(storedExpiresAt);
+        return Number.isFinite(expiresAt) ? expiresAt : null;
+    }
+    async setInstallationToken(token, expiresAt) {
         window.localStorage.setItem(this.installationTokenKey, token);
+        if (expiresAt !== undefined && Number.isFinite(expiresAt)) {
+            window.localStorage.setItem(this.installationTokenExpiresAtKey, String(expiresAt));
+        }
+        else {
+            window.localStorage.removeItem(this.installationTokenExpiresAtKey);
+        }
         await setInstallationTokenInIndexedDb(this.installationTokenKey, token);
     }
     async clearInstallationToken() {
         window.localStorage.removeItem(this.installationTokenKey);
+        window.localStorage.removeItem(this.installationTokenExpiresAtKey);
         await clearInstallationTokenFromIndexedDb(this.installationTokenKey);
     }
     async getAuthToken() {
@@ -200,10 +219,14 @@ class DeviceInfo {
     }
 }
 
+const INSTALLATION_TOKEN_REFRESH_THRESHOLD_DAYS = 14;
+const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
 class CoreSdk {
     constructor(config) {
         this.SDK_VERSION = "1.0.0";
         this.initializationPromise = null;
+        this.tokenExpiryCheckPromise = null;
+        this.tokenRefreshPromise = null;
         if (!config) {
             throw new Error("CoreSdk config is required.");
         }
@@ -219,6 +242,11 @@ class CoreSdk {
         this.httpClient = new FetchHttpClient();
         this.storage = new BrowserStorage();
         this.deviceInfo = new DeviceInfo();
+        if (typeof document !== "undefined") {
+            void this.refreshInstallationTokenIfNeeded().catch((error) => {
+                console.error("[CoreSdk] Installation token expiry check failed.", error);
+            });
+        }
     }
     getApiKeyHeader() {
         return { "X-Api-Key": this.apiKey };
@@ -242,7 +270,7 @@ class CoreSdk {
             },
         });
         if (response.success && response.data) {
-            await this.storage.setInstallationToken(response.data.token);
+            await this.storage.setInstallationToken(response.data.token, response.data.expiresAt);
         }
         return response;
     }
@@ -266,6 +294,68 @@ class CoreSdk {
         });
         if (response.success && shouldUpdateDeviceInfo) {
             await this.storage.setDeviceInfo(currentDeviceInfo);
+        }
+        return response;
+    }
+    /** Refreshes the existing installation token and persists its token and expiration. */
+    async refreshInstallationToken() {
+        if (this.tokenRefreshPromise) {
+            return this.tokenRefreshPromise;
+        }
+        this.tokenRefreshPromise = this.refreshInstallationTokenInternal().finally(() => {
+            this.tokenRefreshPromise = null;
+        });
+        return this.tokenRefreshPromise;
+    }
+    async refreshInstallationTokenInternal() {
+        // Read storage directly: the document entry check can be waiting for this refresh.
+        const installationToken = await this.storage.getInstallationToken();
+        if (!installationToken) {
+            throw new Error("Installation token is unavailable.");
+        }
+        const response = await this.request({
+            method: "POST",
+            url: ":7078/api/v1/devices/token/refresh",
+            headers: { Authorization: `Bearer ${installationToken}` },
+        });
+        if (response.success && response.data?.token) {
+            await this.storage.setInstallationToken(response.data.token, response.data.expiresAt);
+        }
+        return response;
+    }
+    async refreshInstallationTokenIfNeeded() {
+        if (this.tokenExpiryCheckPromise) {
+            return this.tokenExpiryCheckPromise;
+        }
+        this.tokenExpiryCheckPromise = this.checkInstallationTokenExpiry().finally(() => {
+            this.tokenExpiryCheckPromise = null;
+        });
+        return this.tokenExpiryCheckPromise;
+    }
+    async checkInstallationTokenExpiry() {
+        const installationToken = await this.storage.getInstallationToken();
+        if (!installationToken) {
+            return;
+        }
+        const expiresAt = await this.storage.getInstallationTokenExpiresAt();
+        if (expiresAt !== null &&
+            expiresAt - Date.now() < INSTALLATION_TOKEN_REFRESH_THRESHOLD_DAYS * MILLISECONDS_PER_DAY) {
+            await this.refreshInstallationToken();
+        }
+    }
+    /** Deactivates the existing device and clears its installation token on success. */
+    async deactivateDevice() {
+        const installationToken = await this.getInstallationToken();
+        if (!installationToken) {
+            throw new Error("Installation token is unavailable.");
+        }
+        const response = await this.request({
+            method: "DELETE",
+            url: ":7078/api/v1/devices/deactivate",
+            headers: { Authorization: `Bearer ${installationToken}` },
+        });
+        if (response === null || response.success) {
+            await this.clearInstallationToken();
         }
         return response;
     }
@@ -314,6 +404,7 @@ class CoreSdk {
         return this.initializationPromise;
     }
     async initializeAppInternal() {
+        await this.refreshInstallationTokenIfNeeded();
         if (!(await this.storage.getSessionStart())) {
             await this.storage.setSessionStart();
         }
@@ -332,6 +423,13 @@ class CoreSdk {
         }
     }
     async getInstallationToken() {
+        if (this.tokenExpiryCheckPromise) {
+            // A failed background refresh leaves the current token available.
+            await this.tokenExpiryCheckPromise.catch(() => undefined);
+        }
+        if (this.tokenRefreshPromise) {
+            await this.tokenRefreshPromise;
+        }
         return this.storage.getInstallationToken();
     }
     async clearInstallationToken() {
@@ -359,6 +457,7 @@ class CoreSdk {
             url: `${this.baseUrl}${options.url}`,
             headers,
             body: options.body,
+            signal: options.signal,
         });
     }
 }
