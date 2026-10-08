@@ -16,13 +16,18 @@ declare class FetchHttpClient {
 }
 
 interface CoreSdkConfig {
+    /** Base URL for device APIs. */
     baseUrl: string;
+    /** Base URL for authentication APIs. */
+    authenticationBaseUrl?: string;
+    /** Base URL for analytics APIs. */
+    analyticsBaseUrl?: string;
     apiKey: string;
     /**
-     * Push WebSocket host. The SDK appends :7071/ws/push.
+     * Push WebSocket base URL. The SDK appends /ws/push.
      * Example: wss://api.example.com
      */
-    webSocketUrl?: string;
+    pushBaseUrl?: string;
 }
 interface DeviceData {
     token: string;
@@ -45,12 +50,13 @@ interface DeviceDeactivateResponse {
     [key: string]: unknown;
 }
 declare class CoreSdk {
-    private static readonly defaultWebSocketPort;
     private static readonly webSocketPath;
     readonly SDK_VERSION = "1.0.0";
     readonly apiKey: string;
     private readonly baseUrl;
-    private readonly webSocketUrl;
+    private readonly authenticationBaseUrl;
+    private readonly analyticsBaseUrl;
+    private readonly pushBaseUrl;
     private readonly httpClient;
     private readonly storage;
     private readonly deviceInfo;
@@ -89,7 +95,8 @@ declare class CoreSdk {
     /** Deactivates the existing device and clears its installation token on success. */
     deactivateDevice(): Promise<DeviceDeactivateResponse | null>;
     getWebSocketUrl(): string;
-    private assertWebSocketUrl;
+    private static normalizeHttpBaseUrl;
+    private static normalizePushBaseUrl;
     ensureInstallationToken(): Promise<string>;
     initializeApp(): Promise<void>;
     private initializeAppInternal;
@@ -99,6 +106,12 @@ declare class CoreSdk {
     setAuthToken(token: string): Promise<void>;
     clearAuthToken(): Promise<void>;
     request<T = unknown>(options: RequestOptions): Promise<T>;
+    requestAuthentication<T = unknown>(options: RequestOptions): Promise<T>;
+    requestAnalytics<T = unknown>(options: RequestOptions): Promise<T>;
+    isAuthenticationConfigured(): boolean;
+    isAnalyticsConfigured(): boolean;
+    isPushConfigured(): boolean;
+    private requestWithBaseUrl;
 }
 
 type DeviceInfoData = {

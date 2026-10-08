@@ -376,8 +376,13 @@ class AnalyticsSdk {
             if (this.automaticCollectionEnabled && event.target instanceof HTMLVideoElement)
                 void this.enqueueAutomatic("video_complete");
         };
-        if (!core || typeof core.request !== "function") {
+        if (!core ||
+            typeof core.requestAnalytics !== "function" ||
+            typeof core.isAnalyticsConfigured !== "function") {
             throw new Error("AnalyticsSdk requires a valid CoreSdk instance.");
+        }
+        if (!core.isAnalyticsConfigured()) {
+            throw new Error("CoreSdk analyticsBaseUrl is required to use AnalyticsSdk.");
         }
         this.validateRequiredString(core.SDK_VERSION, "sdk_version", DEFAULTS.maxSdkVersionLength);
         if (!config || typeof config.appVersion !== "string" || !config.appVersion) {
@@ -595,9 +600,9 @@ class AnalyticsSdk {
                 const controller = typeof AbortController === "undefined" ? null : new AbortController();
                 this.activeCollectController = controller;
                 try {
-                    response = await this.core.request({
+                    response = await this.core.requestAnalytics({
                         method: "POST",
-                        url: ":8075/api/v1/analytics/collect",
+                        url: "/api/v1/analytics/collect",
                         headers: { Authorization: `Bearer ${token}` },
                         body: { ...body, sent_at: sentAt },
                         ...(controller ? { signal: controller.signal } : {}),
@@ -773,9 +778,9 @@ class AnalyticsSdk {
         await this.storage.pruneEvents(now - DEFAULTS.offlineRetentionMs, now, MAX_QUEUED_EVENTS, MAX_QUEUE_SIZE_BYTES);
     }
     async identityRequest(body) {
-        return this.core.request({
+        return this.core.requestAnalytics({
             method: "POST",
-            url: ":8075/api/v1/analytics/identity",
+            url: "/api/v1/analytics/identity",
             headers: { Authorization: `Bearer ${await this.requireInstallationToken()}` },
             body,
         });

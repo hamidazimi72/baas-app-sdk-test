@@ -37,8 +37,11 @@ export class AuthSdk {
     if (!core) {
       throw new Error("AuthSdk requires a CoreSdk instance.");
     }
-    if (typeof core.request !== "function") {
-      throw new Error("Invalid CoreSdk instance: missing request method.");
+    if (typeof core.requestAuthentication !== "function" || typeof core.isAuthenticationConfigured !== "function") {
+      throw new Error("Invalid CoreSdk instance: authentication support is unavailable.");
+    }
+    if (!core.isAuthenticationConfigured()) {
+      throw new Error("CoreSdk authenticationBaseUrl is required to use AuthSdk.");
     }
 
     this.core = core;
@@ -106,9 +109,9 @@ export class AuthSdk {
     const url = new URL(window.location.href);
     const code = this.getOAuthCode(url, "google");
 
-    const response = await this.core.request<AuthTokenResponse>({
+    const response = await this.core.requestAuthentication<AuthTokenResponse>({
       method: "POST",
-      url: ":8060/api/v1/auth/google",
+      url: "/api/v1/auth/google",
       headers: await this.getInstallationTokenHeader(),
       body: {
         code,
@@ -151,9 +154,9 @@ export class AuthSdk {
     const url = new URL(window.location.href);
     const code = this.getOAuthCode(url, "myGov");
 
-    const response = await this.core.request<AuthTokenResponse>({
+    const response = await this.core.requestAuthentication<AuthTokenResponse>({
       method: "POST",
-      url: ":8060/api/v1/auth/my-gov",
+      url: "/api/v1/auth/my-gov",
       headers: await this.getInstallationTokenHeader(),
       body: {
         code,
@@ -175,9 +178,9 @@ export class AuthSdk {
 
   // Register with phone - Send Otp
   async registerPhoneSendOtp(payload: { phone: string }): Promise<unknown> {
-    return this.core.request({
+    return this.core.requestAuthentication({
       method: "POST",
-      url: ":8060/api/v1/auth/phone/register/send-otp",
+      url: "/api/v1/auth/phone/register/send-otp",
       headers: await this.getInstallationTokenHeader(),
       body: { ...payload },
     });
@@ -185,9 +188,9 @@ export class AuthSdk {
 
   // Register with phone - Verify Otp
   async registerPhoneVerifyOtp(payload: { phone: string; code: string }): Promise<AuthTokenResponse> {
-    const response = await this.core.request<AuthTokenResponse>({
+    const response = await this.core.requestAuthentication<AuthTokenResponse>({
       method: "POST",
-      url: ":8060/api/v1/auth/phone/register/verify",
+      url: "/api/v1/auth/phone/register/verify",
       headers: await this.getInstallationTokenHeader(),
       body: {
         // ...(await this.getDeviceIdBody()),d
@@ -200,9 +203,9 @@ export class AuthSdk {
 
   // Register with email - Send Otp
   async registerEmailSendOtp(payload: { email: string }): Promise<unknown> {
-    return this.core.request({
+    return this.core.requestAuthentication({
       method: "POST",
-      url: ":8060/api/v1/auth/email/register/send-otp",
+      url: "/api/v1/auth/email/register/send-otp",
       headers: await this.getInstallationTokenHeader(),
       body: { ...payload },
     });
@@ -210,9 +213,9 @@ export class AuthSdk {
 
   // Register with email - Verify Otp
   async registerEmailVerifyOtp(payload: { email: string; code: string; password: string }): Promise<AuthTokenResponse> {
-    const response = await this.core.request<AuthTokenResponse>({
+    const response = await this.core.requestAuthentication<AuthTokenResponse>({
       method: "POST",
-      url: ":8060/api/v1/auth/email/register/verify",
+      url: "/api/v1/auth/email/register/verify",
       headers: await this.getInstallationTokenHeader(),
       body: {
         // ...(await this.getDeviceIdBody()),
@@ -225,9 +228,9 @@ export class AuthSdk {
 
   // Login with phone - Send Otp
   async loginPhoneSendOtp(payload: { phone: string }): Promise<unknown> {
-    return this.core.request({
+    return this.core.requestAuthentication({
       method: "POST",
-      url: ":8060/api/v1/auth/phone/login/send-otp",
+      url: "/api/v1/auth/phone/login/send-otp",
       headers: await this.getInstallationTokenHeader(),
       body: { ...payload },
     });
@@ -235,9 +238,9 @@ export class AuthSdk {
 
   // Login with phone - Verify Otp
   async loginPhoneVerifyOtp(payload: { phone: string; code: string }): Promise<AuthTokenResponse> {
-    const response = await this.core.request<AuthTokenResponse>({
+    const response = await this.core.requestAuthentication<AuthTokenResponse>({
       method: "POST",
-      url: ":8060/api/v1/auth/phone/login/verify",
+      url: "/api/v1/auth/phone/login/verify",
       headers: await this.getInstallationTokenHeader(),
       body: {
         // ...(await this.getDeviceIdBody()),
@@ -250,9 +253,9 @@ export class AuthSdk {
 
   // Login with email - Send Otp
   async loginEmailSendOtp(payload: { email: string; password: string }): Promise<unknown> {
-    return this.core.request({
+    return this.core.requestAuthentication({
       method: "POST",
-      url: ":8060/api/v1/auth/email/login/send-otp",
+      url: "/api/v1/auth/email/login/send-otp",
       headers: await this.getInstallationTokenHeader(),
       body: { ...payload },
     });
@@ -260,9 +263,9 @@ export class AuthSdk {
 
   // Login with email - Verify Otp
   async loginEmailVerifyOtp(payload: { email: string; code: string; password: string }): Promise<AuthTokenResponse> {
-    const response = await this.core.request<AuthTokenResponse>({
+    const response = await this.core.requestAuthentication<AuthTokenResponse>({
       method: "POST",
-      url: ":8060/api/v1/auth/email/login/verify",
+      url: "/api/v1/auth/email/login/verify",
       headers: await this.getInstallationTokenHeader(),
       body: {
         // ...(await this.getDeviceIdBody()),
@@ -275,9 +278,9 @@ export class AuthSdk {
 
   // Login anonymous
   async loginAnonymous(payload: Record<string, unknown>): Promise<AuthTokenResponse> {
-    const response = await this.core.request<AuthTokenResponse>({
+    const response = await this.core.requestAuthentication<AuthTokenResponse>({
       method: "POST",
-      url: ":8060/api/v1/auth/anonymous",
+      url: "/api/v1/auth/anonymous",
       headers: await this.getInstallationTokenHeader(),
       body: {
         // ...(await this.getDeviceIdBody()),
@@ -290,9 +293,9 @@ export class AuthSdk {
 
   // Login with My gov
   async loginMyGov(payload: { nationalId: string; authCode: string }): Promise<AuthTokenResponse> {
-    const response = await this.core.request<AuthTokenResponse>({
+    const response = await this.core.requestAuthentication<AuthTokenResponse>({
       method: "POST",
-      url: ":8060/api/v1/auth/my-gov",
+      url: "/api/v1/auth/my-gov",
       headers: await this.getInstallationTokenHeader(),
       body: {
         // ...(await this.getDeviceIdBody()),
@@ -305,9 +308,9 @@ export class AuthSdk {
 
   // Logout
   async logout(): Promise<unknown> {
-    const response = await this.core.request<{ success: boolean }>({
+    const response = await this.core.requestAuthentication<{ success: boolean }>({
       method: "POST",
-      url: ":8060/api/v1/auth/session/logout",
+      url: "/api/v1/auth/session/logout",
       headers: await this.getAuthHeader(),
     });
     if (response?.success) {
@@ -318,18 +321,18 @@ export class AuthSdk {
 
   // Fetch all sessions
   async fetchAllSessions(): Promise<unknown> {
-    return this.core.request({
+    return this.core.requestAuthentication({
       method: "POST",
-      url: ":8060/api/v1/auth/session/tokens",
+      url: "/api/v1/auth/session/tokens",
       headers: await this.getAuthHeader(),
     });
   }
 
   // Revoke token
   async revokeToken(payload: { tokenId: string }): Promise<unknown> {
-    return this.core.request({
+    return this.core.requestAuthentication({
       method: "POST",
-      url: ":8060/api/v1/auth/session/tokens/revoke",
+      url: "/api/v1/auth/session/tokens/revoke",
       headers: await this.getAuthHeader(),
       body: { tokenId: payload?.tokenId },
     });
@@ -337,9 +340,9 @@ export class AuthSdk {
 
   // Fetch user profile
   async fetchUser(): Promise<unknown> {
-    return this.core.request({
+    return this.core.requestAuthentication({
       method: "POST",
-      url: ":8060/api/v1/auth/profile/get",
+      url: "/api/v1/auth/profile/get",
       headers: await this.getAuthHeader(),
     });
   }
@@ -354,9 +357,9 @@ export class AuthSdk {
     city: string;
     address: string;
   }): Promise<unknown> {
-    return this.core.request({
+    return this.core.requestAuthentication({
       method: "POST",
-      url: ":8060/api/v1/auth/profile/update",
+      url: "/api/v1/auth/profile/update",
       headers: await this.getAuthHeader(),
       body: { ...payload },
     });
@@ -364,9 +367,9 @@ export class AuthSdk {
 
   // Reset password - Send Otp
   async resetPasswordSendOtp(payload: { email: string }): Promise<unknown> {
-    return this.core.request({
+    return this.core.requestAuthentication({
       method: "POST",
-      url: ":8060/api/v1/auth/email/reset/password/sent-otp",
+      url: "/api/v1/auth/email/reset/password/sent-otp",
       headers: await this.getInstallationTokenHeader(),
       body: { ...payload },
     });
@@ -374,9 +377,9 @@ export class AuthSdk {
 
   // Reset password - Verify Otp
   async resetPasswordVerifyOtp(payload: { email: string; password: string; code: string }): Promise<unknown> {
-    return this.core.request({
+    return this.core.requestAuthentication({
       method: "POST",
-      url: ":8060/api/v1/auth/email/reset/password/verify",
+      url: "/api/v1/auth/email/reset/password/verify",
       headers: await this.getInstallationTokenHeader(),
       body: { ...payload },
     });
@@ -392,9 +395,9 @@ export class AuthSdk {
     password: string;
     code: string;
   }): Promise<AuthTokenResponse> {
-    const response = await this.core.request<AuthTokenResponse>({
+    const response = await this.core.requestAuthentication<AuthTokenResponse>({
       method: "POST",
-      url: ":8060/api/v1/auth/email/convert/user",
+      url: "/api/v1/auth/email/convert/user",
       body: {
         ...payload,
       },

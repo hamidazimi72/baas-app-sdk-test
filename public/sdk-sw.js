@@ -3,68 +3,67 @@
 	!(function () {
 		const t = 'GapPushSDK';
 		self[t] || (self[t] = {});
-		const o = self[t];
-		o.version = '1.0.12';
-		const n = 'installation-tokens';
-		((o.reportNotificationEvent = async function (t, o) {
+		const n = self[t];
+		n.version = '1.0.14';
+		const o = 'installation-tokens';
+		((n.reportNotificationEvent = async function (t, n) {
 			try {
-				const e = await new Promise((t, o) => {
+				const e = await new Promise((t, n) => {
 						const e = indexedDB.open('mbaas-sdk', 2);
 						((e.onupgradeneeded = () => {
-							e.result.objectStoreNames.contains(n) || e.result.createObjectStore(n);
+							e.result.objectStoreNames.contains(o) || e.result.createObjectStore(o);
 						}),
 							(e.onsuccess = () => {
 								const i = e.result,
-									c = i.transaction(n, 'readonly').objectStore(n).get('mbaas:installation_token');
-								((c.onsuccess = () => {
-									(i.close(), t(c.result || null));
+									a = i.transaction(o, 'readonly').objectStore(o).get('mbaas:installation_token');
+								((a.onsuccess = () => {
+									(i.close(), t(a.result || null));
 								}),
-									(c.onerror = () => {
-										(i.close(), o(c.error));
+									(a.onerror = () => {
+										(i.close(), n(a.error));
 									}));
 							}),
-							(e.onerror = () => o(e.error)));
+							(e.onerror = () => n(e.error)));
 					}),
 					i = { 'Content-Type': 'application/json' };
 				e && (i.Authorization = `Bearer ${e}`);
-				return await fetch('/api/sdk/7078/api/v1/push/event', {
+				return await fetch('https://push-gateway.stage.baas.gov.ir/api/v1/push/event', {
 					method: 'POST',
 					headers: i,
 					keepalive: !0,
-					body: JSON.stringify({ eventType: t, pushId: o.notification.tag }),
+					body: JSON.stringify({ eventType: t, pushId: n.notification.data?.pushId }),
 				});
 			} catch (t) {
 				throw t;
 			}
 		}),
-			(o.handleNotificationClick = function (t) {
-				const n = t.notification.data?.url || new URL(self.location.origin).href;
-				(console.log(n),
-					t.waitUntil(
-						(async () => {
-							try {
-								await o.reportNotificationEvent('OPENED', t);
-							} catch (t) {
-								console.error('Failed to report click:', t);
-							}
-							try {
-								const t = await clients.matchAll({ type: 'window', includeUncontrolled: !0 });
-								for (const o of t) if (o.url === n && 'focus' in o) return await o.focus();
-								if (clients.openWindow) return await clients.openWindow(n);
-							} catch (t) {
-								console.error('Failed to open window:', t);
-							}
-						})(),
-					));
+			(n.handleNotificationClick = function (t) {
+				const o = t.notification.data?.url || new URL(self.location.origin).href;
+				t.waitUntil(
+					(async () => {
+						try {
+							await n.reportNotificationEvent('OPENED', t);
+						} catch (t) {
+							console.error('Failed to report click:', t);
+						}
+						try {
+							const t = await clients.matchAll({ type: 'window', includeUncontrolled: !0 });
+							for (const n of t) if (n.url === o && 'focus' in n) return await n.focus();
+							if (clients.openWindow) return await clients.openWindow(o);
+						} catch (t) {
+							console.error('Failed to open window:', t);
+						}
+					})(),
+				);
 			}),
-			(o.handleNotificationClose = function (t) {
-				t.waitUntil(Promise.all([o.reportNotificationEvent('DISMISSED', t)]));
+			(n.handleNotificationClose = function (t) {
+				t.waitUntil(Promise.all([n.reportNotificationEvent('DISMISSED', t)]));
 			}),
 			self.addEventListener('notificationclick', function (t) {
-				(console.log('notificationclick received'), o.handleNotificationClick(t));
+				n.handleNotificationClick(t);
 			}),
 			self.addEventListener('notificationclose', function (t) {
-				(console.log('notificationclose received'), o.handleNotificationClose(t));
+				n.handleNotificationClose(t);
 			}));
 	})();
 })();

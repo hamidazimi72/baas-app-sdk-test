@@ -238,9 +238,15 @@ class CoreSdk {
         if (!config.apiKey) {
             throw new Error("CoreSdk Api-key is required.");
         }
-        this.baseUrl = config.baseUrl.replace(/\/$/, "");
+        this.baseUrl = CoreSdk.normalizeHttpBaseUrl(config.baseUrl, "baseUrl");
+        this.authenticationBaseUrl = config.authenticationBaseUrl
+            ? CoreSdk.normalizeHttpBaseUrl(config.authenticationBaseUrl, "authenticationBaseUrl")
+            : undefined;
+        this.analyticsBaseUrl = config.analyticsBaseUrl
+            ? CoreSdk.normalizeHttpBaseUrl(config.analyticsBaseUrl, "analyticsBaseUrl")
+            : undefined;
+        this.pushBaseUrl = config.pushBaseUrl ? CoreSdk.normalizePushBaseUrl(config.pushBaseUrl) : undefined;
         this.apiKey = config.apiKey;
-        this.webSocketUrl = config.webSocketUrl?.trim();
         this.httpClient = new FetchHttpClient();
         this.storage = new BrowserStorage();
         this.deviceInfo = new DeviceInfo();
@@ -263,7 +269,7 @@ class CoreSdk {
     async deviceRegister(payload) {
         const response = await this.httpClient.request({
             method: "POST",
-            url: `${this.baseUrl}:7078/api/v1/devices/register`,
+            url: `${this.baseUrl}/api/v1/devices/register`,
             headers: { "Content-Type": "application/json", ...this.getApiKeyHeader() },
             body: {
                 platform: "WEB",
@@ -283,7 +289,7 @@ class CoreSdk {
         const shouldUpdateDeviceInfo = !savedDeviceInfo || !this.areDeviceInfoEqual(savedDeviceInfo, currentDeviceInfo);
         const response = await this.httpClient.request({
             method: "PATCH",
-            url: `${this.baseUrl}:7078/api/v1/devices/update`,
+            url: `${this.baseUrl}/api/v1/devices/update`,
             headers: {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${installationToken}`,
@@ -317,7 +323,7 @@ class CoreSdk {
         }
         const response = await this.request({
             method: "POST",
-            url: ":7078/api/v1/devices/token/refresh",
+            url: "/api/v1/devices/token/refresh",
             headers: { Authorization: `Bearer ${installationToken}` },
         });
         if (response.success && response.data?.token) {
@@ -353,7 +359,7 @@ class CoreSdk {
         }
         const response = await this.request({
             method: "DELETE",
-            url: ":7078/api/v1/devices/deactivate",
+            url: "/api/v1/devices/deactivate",
             headers: { Authorization: `Bearer ${installationToken}` },
         });
         if (response === null || response.success) {
@@ -362,28 +368,40 @@ class CoreSdk {
         return response;
     }
     getWebSocketUrl() {
-        if (!this.webSocketUrl) {
-            throw new Error("CoreSdk webSocketUrl is required to use PushSdk.");
+        if (!this.pushBaseUrl) {
+            throw new Error("CoreSdk pushBaseUrl is required to use PushSdk.");
         }
-        const parsedUrl = this.assertWebSocketUrl(this.webSocketUrl);
-        parsedUrl.port = CoreSdk.defaultWebSocketPort;
-        parsedUrl.pathname = CoreSdk.webSocketPath;
+        const parsedUrl = new URL(this.pushBaseUrl);
+        parsedUrl.pathname = `${parsedUrl.pathname.replace(/\/$/, "")}${CoreSdk.webSocketPath}`;
         parsedUrl.search = "";
         parsedUrl.hash = "";
         return parsedUrl.toString().replace(/\/$/, "");
     }
-    assertWebSocketUrl(webSocketUrl) {
+    static normalizeHttpBaseUrl(baseUrl, configKey) {
         let parsedUrl;
         try {
-            parsedUrl = new URL(webSocketUrl);
+            parsedUrl = new URL(baseUrl.trim());
         }
         catch {
-            throw new Error("CoreSdk webSocketUrl must be a valid absolute URL.");
+            throw new Error(`CoreSdk ${configKey} must be a valid absolute URL.`);
         }
-        if (parsedUrl.protocol !== "ws:" && parsedUrl.protocol !== "wss:") {
-            throw new Error("CoreSdk webSocketUrl must use ws or wss protocol.");
+        if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+            throw new Error(`CoreSdk ${configKey} must use http or https protocol.`);
         }
-        return parsedUrl;
+        return baseUrl.trim().replace(/\/+$/, "");
+    }
+    static normalizePushBaseUrl(baseUrl) {
+        let parsedUrl;
+        try {
+            parsedUrl = new URL(baseUrl.trim());
+        }
+        catch {
+            throw new Error("CoreSdk pushBaseUrl must be a valid absolute URL.");
+        }
+        if (parsedUrl.protocol !== "wss:") {
+            throw new Error("CoreSdk pushBaseUrl must use wss protocol.");
+        }
+        return baseUrl.trim().replace(/\/+$/, "");
     }
     async ensureInstallationToken() {
         let installationToken = await this.getInstallationToken();
@@ -447,6 +465,30 @@ class CoreSdk {
         return this.storage.clearAuthToken();
     }
     async request(options) {
+        return this.requestWithBaseUrl(this.baseUrl, options);
+    }
+    async requestAuthentication(options) {
+        if (!this.authenticationBaseUrl) {
+            throw new Error("CoreSdk authenticationBaseUrl is required to use AuthSdk.");
+        }
+        return this.requestWithBaseUrl(this.authenticationBaseUrl, options);
+    }
+    async requestAnalytics(options) {
+        if (!this.analyticsBaseUrl) {
+            throw new Error("CoreSdk analyticsBaseUrl is required to use AnalyticsSdk.");
+        }
+        return this.requestWithBaseUrl(this.analyticsBaseUrl, options);
+    }
+    isAuthenticationConfigured() {
+        return this.authenticationBaseUrl !== undefined;
+    }
+    isAnalyticsConfigured() {
+        return this.analyticsBaseUrl !== undefined;
+    }
+    isPushConfigured() {
+        return this.pushBaseUrl !== undefined;
+    }
+    async requestWithBaseUrl(baseUrl, options) {
         if (!options?.method || !options?.url) {
             throw new Error("Request method and url are required.");
         }
@@ -456,14 +498,13 @@ class CoreSdk {
         };
         return this.httpClient.request({
             method: options.method,
-            url: `${this.baseUrl}${options.url}`,
+            url: `${baseUrl}${options.url}`,
             headers,
             body: options.body,
             signal: options.signal,
         });
     }
 }
-CoreSdk.defaultWebSocketPort = "7071";
 CoreSdk.webSocketPath = "/ws/push";
 
 class OAuthError extends Error {
@@ -481,8 +522,11 @@ class AuthSdk {
         if (!core) {
             throw new Error("AuthSdk requires a CoreSdk instance.");
         }
-        if (typeof core.request !== "function") {
-            throw new Error("Invalid CoreSdk instance: missing request method.");
+        if (typeof core.requestAuthentication !== "function" || typeof core.isAuthenticationConfigured !== "function") {
+            throw new Error("Invalid CoreSdk instance: authentication support is unavailable.");
+        }
+        if (!core.isAuthenticationConfigured()) {
+            throw new Error("CoreSdk authenticationBaseUrl is required to use AuthSdk.");
         }
         this.core = core;
     }
@@ -531,9 +575,9 @@ class AuthSdk {
     async handleGoogleCallback(clientId, clientSecret, redirectUri) {
         const url = new URL(window.location.href);
         const code = this.getOAuthCode(url, "google");
-        const response = await this.core.request({
+        const response = await this.core.requestAuthentication({
             method: "POST",
-            url: ":8060/api/v1/auth/google",
+            url: "/api/v1/auth/google",
             headers: await this.getInstallationTokenHeader(),
             body: {
                 code,
@@ -568,9 +612,9 @@ class AuthSdk {
     async handleMyGovCallback() {
         const url = new URL(window.location.href);
         const code = this.getOAuthCode(url, "myGov");
-        const response = await this.core.request({
+        const response = await this.core.requestAuthentication({
             method: "POST",
-            url: ":8060/api/v1/auth/my-gov",
+            url: "/api/v1/auth/my-gov",
             headers: await this.getInstallationTokenHeader(),
             body: {
                 code,
@@ -589,18 +633,18 @@ class AuthSdk {
     }
     // Register with phone - Send Otp
     async registerPhoneSendOtp(payload) {
-        return this.core.request({
+        return this.core.requestAuthentication({
             method: "POST",
-            url: ":8060/api/v1/auth/phone/register/send-otp",
+            url: "/api/v1/auth/phone/register/send-otp",
             headers: await this.getInstallationTokenHeader(),
             body: { ...payload },
         });
     }
     // Register with phone - Verify Otp
     async registerPhoneVerifyOtp(payload) {
-        const response = await this.core.request({
+        const response = await this.core.requestAuthentication({
             method: "POST",
-            url: ":8060/api/v1/auth/phone/register/verify",
+            url: "/api/v1/auth/phone/register/verify",
             headers: await this.getInstallationTokenHeader(),
             body: {
                 // ...(await this.getDeviceIdBody()),d
@@ -612,18 +656,18 @@ class AuthSdk {
     }
     // Register with email - Send Otp
     async registerEmailSendOtp(payload) {
-        return this.core.request({
+        return this.core.requestAuthentication({
             method: "POST",
-            url: ":8060/api/v1/auth/email/register/send-otp",
+            url: "/api/v1/auth/email/register/send-otp",
             headers: await this.getInstallationTokenHeader(),
             body: { ...payload },
         });
     }
     // Register with email - Verify Otp
     async registerEmailVerifyOtp(payload) {
-        const response = await this.core.request({
+        const response = await this.core.requestAuthentication({
             method: "POST",
-            url: ":8060/api/v1/auth/email/register/verify",
+            url: "/api/v1/auth/email/register/verify",
             headers: await this.getInstallationTokenHeader(),
             body: {
                 // ...(await this.getDeviceIdBody()),
@@ -635,18 +679,18 @@ class AuthSdk {
     }
     // Login with phone - Send Otp
     async loginPhoneSendOtp(payload) {
-        return this.core.request({
+        return this.core.requestAuthentication({
             method: "POST",
-            url: ":8060/api/v1/auth/phone/login/send-otp",
+            url: "/api/v1/auth/phone/login/send-otp",
             headers: await this.getInstallationTokenHeader(),
             body: { ...payload },
         });
     }
     // Login with phone - Verify Otp
     async loginPhoneVerifyOtp(payload) {
-        const response = await this.core.request({
+        const response = await this.core.requestAuthentication({
             method: "POST",
-            url: ":8060/api/v1/auth/phone/login/verify",
+            url: "/api/v1/auth/phone/login/verify",
             headers: await this.getInstallationTokenHeader(),
             body: {
                 // ...(await this.getDeviceIdBody()),
@@ -658,18 +702,18 @@ class AuthSdk {
     }
     // Login with email - Send Otp
     async loginEmailSendOtp(payload) {
-        return this.core.request({
+        return this.core.requestAuthentication({
             method: "POST",
-            url: ":8060/api/v1/auth/email/login/send-otp",
+            url: "/api/v1/auth/email/login/send-otp",
             headers: await this.getInstallationTokenHeader(),
             body: { ...payload },
         });
     }
     // Login with email - Verify Otp
     async loginEmailVerifyOtp(payload) {
-        const response = await this.core.request({
+        const response = await this.core.requestAuthentication({
             method: "POST",
-            url: ":8060/api/v1/auth/email/login/verify",
+            url: "/api/v1/auth/email/login/verify",
             headers: await this.getInstallationTokenHeader(),
             body: {
                 // ...(await this.getDeviceIdBody()),
@@ -681,9 +725,9 @@ class AuthSdk {
     }
     // Login anonymous
     async loginAnonymous(payload) {
-        const response = await this.core.request({
+        const response = await this.core.requestAuthentication({
             method: "POST",
-            url: ":8060/api/v1/auth/anonymous",
+            url: "/api/v1/auth/anonymous",
             headers: await this.getInstallationTokenHeader(),
             body: {
                 // ...(await this.getDeviceIdBody()),
@@ -695,9 +739,9 @@ class AuthSdk {
     }
     // Login with My gov
     async loginMyGov(payload) {
-        const response = await this.core.request({
+        const response = await this.core.requestAuthentication({
             method: "POST",
-            url: ":8060/api/v1/auth/my-gov",
+            url: "/api/v1/auth/my-gov",
             headers: await this.getInstallationTokenHeader(),
             body: {
                 // ...(await this.getDeviceIdBody()),
@@ -709,9 +753,9 @@ class AuthSdk {
     }
     // Logout
     async logout() {
-        const response = await this.core.request({
+        const response = await this.core.requestAuthentication({
             method: "POST",
-            url: ":8060/api/v1/auth/session/logout",
+            url: "/api/v1/auth/session/logout",
             headers: await this.getAuthHeader(),
         });
         if (response?.success) {
@@ -721,52 +765,52 @@ class AuthSdk {
     }
     // Fetch all sessions
     async fetchAllSessions() {
-        return this.core.request({
+        return this.core.requestAuthentication({
             method: "POST",
-            url: ":8060/api/v1/auth/session/tokens",
+            url: "/api/v1/auth/session/tokens",
             headers: await this.getAuthHeader(),
         });
     }
     // Revoke token
     async revokeToken(payload) {
-        return this.core.request({
+        return this.core.requestAuthentication({
             method: "POST",
-            url: ":8060/api/v1/auth/session/tokens/revoke",
+            url: "/api/v1/auth/session/tokens/revoke",
             headers: await this.getAuthHeader(),
             body: { tokenId: payload?.tokenId },
         });
     }
     // Fetch user profile
     async fetchUser() {
-        return this.core.request({
+        return this.core.requestAuthentication({
             method: "POST",
-            url: ":8060/api/v1/auth/profile/get",
+            url: "/api/v1/auth/profile/get",
             headers: await this.getAuthHeader(),
         });
     }
     // Update user profile
     async updateUser(payload) {
-        return this.core.request({
+        return this.core.requestAuthentication({
             method: "POST",
-            url: ":8060/api/v1/auth/profile/update",
+            url: "/api/v1/auth/profile/update",
             headers: await this.getAuthHeader(),
             body: { ...payload },
         });
     }
     // Reset password - Send Otp
     async resetPasswordSendOtp(payload) {
-        return this.core.request({
+        return this.core.requestAuthentication({
             method: "POST",
-            url: ":8060/api/v1/auth/email/reset/password/sent-otp",
+            url: "/api/v1/auth/email/reset/password/sent-otp",
             headers: await this.getInstallationTokenHeader(),
             body: { ...payload },
         });
     }
     // Reset password - Verify Otp
     async resetPasswordVerifyOtp(payload) {
-        return this.core.request({
+        return this.core.requestAuthentication({
             method: "POST",
-            url: ":8060/api/v1/auth/email/reset/password/verify",
+            url: "/api/v1/auth/email/reset/password/verify",
             headers: await this.getInstallationTokenHeader(),
             body: { ...payload },
         });
@@ -776,9 +820,9 @@ class AuthSdk {
         return this.registerEmailSendOtp({ ...payload });
     }
     async convertUserByEmailVerifyOtp(payload) {
-        const response = await this.core.request({
+        const response = await this.core.requestAuthentication({
             method: "POST",
-            url: ":8060/api/v1/auth/email/convert/user",
+            url: "/api/v1/auth/email/convert/user",
             body: {
                 ...payload,
             },
@@ -848,8 +892,11 @@ class PushSdk {
         if (!core) {
             throw new Error("PushSdk requires a CoreSdk instance.");
         }
-        if (typeof core.request !== "function") {
-            throw new Error("Invalid CoreSdk instance: missing request method.");
+        if (typeof core.getWebSocketUrl !== "function" || typeof core.isPushConfigured !== "function") {
+            throw new Error("Invalid CoreSdk instance: push support is unavailable.");
+        }
+        if (!core.isPushConfigured()) {
+            throw new Error("CoreSdk pushBaseUrl is required to use PushSdk.");
         }
         this.core = core;
         this.coordinationChannelName = `mbaas-push-coordination:${PushSdk.hashScope(core.apiKey)}`;
@@ -1634,8 +1681,13 @@ class AnalyticsSdk {
             if (this.automaticCollectionEnabled && event.target instanceof HTMLVideoElement)
                 void this.enqueueAutomatic("video_complete");
         };
-        if (!core || typeof core.request !== "function") {
+        if (!core ||
+            typeof core.requestAnalytics !== "function" ||
+            typeof core.isAnalyticsConfigured !== "function") {
             throw new Error("AnalyticsSdk requires a valid CoreSdk instance.");
+        }
+        if (!core.isAnalyticsConfigured()) {
+            throw new Error("CoreSdk analyticsBaseUrl is required to use AnalyticsSdk.");
         }
         this.validateRequiredString(core.SDK_VERSION, "sdk_version", DEFAULTS.maxSdkVersionLength);
         if (!config || typeof config.appVersion !== "string" || !config.appVersion) {
@@ -1853,9 +1905,9 @@ class AnalyticsSdk {
                 const controller = typeof AbortController === "undefined" ? null : new AbortController();
                 this.activeCollectController = controller;
                 try {
-                    response = await this.core.request({
+                    response = await this.core.requestAnalytics({
                         method: "POST",
-                        url: ":8075/api/v1/analytics/collect",
+                        url: "/api/v1/analytics/collect",
                         headers: { Authorization: `Bearer ${token}` },
                         body: { ...body, sent_at: sentAt },
                         ...(controller ? { signal: controller.signal } : {}),
@@ -2031,9 +2083,9 @@ class AnalyticsSdk {
         await this.storage.pruneEvents(now - DEFAULTS.offlineRetentionMs, now, MAX_QUEUED_EVENTS, MAX_QUEUE_SIZE_BYTES);
     }
     async identityRequest(body) {
-        return this.core.request({
+        return this.core.requestAnalytics({
             method: "POST",
-            url: ":8075/api/v1/analytics/identity",
+            url: "/api/v1/analytics/identity",
             headers: { Authorization: `Bearer ${await this.requireInstallationToken()}` },
             body,
         });

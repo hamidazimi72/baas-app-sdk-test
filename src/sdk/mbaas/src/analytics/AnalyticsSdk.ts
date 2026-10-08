@@ -143,8 +143,15 @@ export class AnalyticsSdk {
   private patchedReplaceState: History["replaceState"] | null = null;
 
   constructor(core: CoreSdk, config: AnalyticsSdkConfig) {
-    if (!core || typeof core.request !== "function") {
+    if (
+      !core ||
+      typeof core.requestAnalytics !== "function" ||
+      typeof core.isAnalyticsConfigured !== "function"
+    ) {
       throw new Error("AnalyticsSdk requires a valid CoreSdk instance.");
+    }
+    if (!core.isAnalyticsConfigured()) {
+      throw new Error("CoreSdk analyticsBaseUrl is required to use AnalyticsSdk.");
     }
     this.validateRequiredString(core.SDK_VERSION, "sdk_version", DEFAULTS.maxSdkVersionLength);
     if (!config || typeof config.appVersion !== "string" || !config.appVersion) {
@@ -369,9 +376,9 @@ export class AnalyticsSdk {
         const controller = typeof AbortController === "undefined" ? null : new AbortController();
         this.activeCollectController = controller;
         try {
-          response = await this.core.request<AnalyticsCollectResponse>({
+          response = await this.core.requestAnalytics<AnalyticsCollectResponse>({
             method: "POST",
-            url: ":8075/api/v1/analytics/collect",
+            url: "/api/v1/analytics/collect",
             headers: { Authorization: `Bearer ${token}` },
             body: { ...body, sent_at: sentAt },
             ...(controller ? { signal: controller.signal } : {}),
@@ -567,9 +574,9 @@ export class AnalyticsSdk {
     action: AnalyticsIdentityAction;
     userId?: string;
   }): Promise<AnalyticsIdentityResponse> {
-    return this.core.request<AnalyticsIdentityResponse>({
+    return this.core.requestAnalytics<AnalyticsIdentityResponse>({
       method: "POST",
-      url: ":8075/api/v1/analytics/identity",
+      url: "/api/v1/analytics/identity",
       headers: { Authorization: `Bearer ${await this.requireInstallationToken()}` },
       body,
     });

@@ -57,8 +57,11 @@ class PushSdk {
         if (!core) {
             throw new Error("PushSdk requires a CoreSdk instance.");
         }
-        if (typeof core.request !== "function") {
-            throw new Error("Invalid CoreSdk instance: missing request method.");
+        if (typeof core.getWebSocketUrl !== "function" || typeof core.isPushConfigured !== "function") {
+            throw new Error("Invalid CoreSdk instance: push support is unavailable.");
+        }
+        if (!core.isPushConfigured()) {
+            throw new Error("CoreSdk pushBaseUrl is required to use PushSdk.");
         }
         this.core = core;
         this.coordinationChannelName = `mbaas-push-coordination:${PushSdk.hashScope(core.apiKey)}`;

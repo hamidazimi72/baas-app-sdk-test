@@ -7,9 +7,9 @@
 
   const sdk = self[GAP_NAMESPACE];
 
-  sdk.version = "1.0.13";
+  sdk.version = "1.0.14";
 
-  const PUSH_EVENT_URL = "http://130.185.72.14:7078/api/v1/push/event";
+  const PUSH_EVENT_URL = "https://push-gateway.stage.baas.gov.ir/api/v1/push/event";
   const INSTALLATION_TOKEN_KEY = "mbaas:installation_token";
   const INSTALLATION_TOKEN_DB_NAME = "mbaas-sdk";
   const INSTALLATION_TOKEN_DB_VERSION = 2;

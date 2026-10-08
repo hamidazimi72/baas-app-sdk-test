@@ -6,13 +6,18 @@ const INSTALLATION_TOKEN_REFRESH_THRESHOLD_DAYS = 14;
 const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
 
 export interface CoreSdkConfig {
+  /** Base URL for device APIs. */
   baseUrl: string;
+  /** Base URL for authentication APIs. */
+  authenticationBaseUrl?: string;
+  /** Base URL for analytics APIs. */
+  analyticsBaseUrl?: string;
   apiKey: string;
   /**
-   * Push WebSocket host. The SDK appends :7071/ws/push.
+   * Push WebSocket base URL. The SDK appends /ws/push.
    * Example: wss://api.example.com
    */
-  webSocketUrl?: string;
+  pushBaseUrl?: string;
 }
 
 export interface DeviceData {
@@ -40,12 +45,13 @@ export interface DeviceDeactivateResponse {
 }
 
 export class CoreSdk {
-  private static readonly defaultWebSocketPort = "7071";
   private static readonly webSocketPath = "/ws/push";
   readonly SDK_VERSION = "1.0.0";
   readonly apiKey: string;
   private readonly baseUrl: string;
-  private readonly webSocketUrl: string | undefined;
+  private readonly authenticationBaseUrl: string | undefined;
+  private readonly analyticsBaseUrl: string | undefined;
+  private readonly pushBaseUrl: string | undefined;
   private readonly httpClient: FetchHttpClient;
   private readonly storage: BrowserStorage;
   private readonly deviceInfo: DeviceInfo;
@@ -64,9 +70,15 @@ export class CoreSdk {
       throw new Error("CoreSdk Api-key is required.");
     }
 
-    this.baseUrl = config.baseUrl.replace(/\/$/, "");
+    this.baseUrl = CoreSdk.normalizeHttpBaseUrl(config.baseUrl, "baseUrl");
+    this.authenticationBaseUrl = config.authenticationBaseUrl
+      ? CoreSdk.normalizeHttpBaseUrl(config.authenticationBaseUrl, "authenticationBaseUrl")
+      : undefined;
+    this.analyticsBaseUrl = config.analyticsBaseUrl
+      ? CoreSdk.normalizeHttpBaseUrl(config.analyticsBaseUrl, "analyticsBaseUrl")
+      : undefined;
+    this.pushBaseUrl = config.pushBaseUrl ? CoreSdk.normalizePushBaseUrl(config.pushBaseUrl) : undefined;
     this.apiKey = config.apiKey;
-    this.webSocketUrl = config.webSocketUrl?.trim();
     this.httpClient = new FetchHttpClient();
     this.storage = new BrowserStorage();
     this.deviceInfo = new DeviceInfo();
@@ -104,7 +116,7 @@ export class CoreSdk {
   }): Promise<DeviceRegisterResponse> {
     const response = await this.httpClient.request<DeviceRegisterResponse>({
       method: "POST",
-      url: `${this.baseUrl}:7078/api/v1/devices/register`,
+      url: `${this.baseUrl}/api/v1/devices/register`,
       headers: { "Content-Type": "application/json", ...this.getApiKeyHeader() },
       body: {
         platform: "WEB",
@@ -139,7 +151,7 @@ export class CoreSdk {
 
     const response = await this.httpClient.request<Record<string, any>>({
       method: "PATCH",
-      url: `${this.baseUrl}:7078/api/v1/devices/update`,
+      url: `${this.baseUrl}/api/v1/devices/update`,
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${installationToken}`,
@@ -180,7 +192,7 @@ export class CoreSdk {
 
     const response = await this.request<DeviceTokenRefreshResponse>({
       method: "POST",
-      url: ":7078/api/v1/devices/token/refresh",
+      url: "/api/v1/devices/token/refresh",
       headers: { Authorization: `Bearer ${installationToken}` },
     });
 
@@ -227,7 +239,7 @@ export class CoreSdk {
 
     const response = await this.request<DeviceDeactivateResponse | null>({
       method: "DELETE",
-      url: ":7078/api/v1/devices/deactivate",
+      url: "/api/v1/devices/deactivate",
       headers: { Authorization: `Bearer ${installationToken}` },
     });
 
@@ -239,34 +251,49 @@ export class CoreSdk {
   }
 
   getWebSocketUrl(): string {
-    if (!this.webSocketUrl) {
-      throw new Error("CoreSdk webSocketUrl is required to use PushSdk.");
+    if (!this.pushBaseUrl) {
+      throw new Error("CoreSdk pushBaseUrl is required to use PushSdk.");
     }
 
-    const parsedUrl = this.assertWebSocketUrl(this.webSocketUrl);
+    const parsedUrl = new URL(this.pushBaseUrl);
 
-    parsedUrl.port = CoreSdk.defaultWebSocketPort;
-    parsedUrl.pathname = CoreSdk.webSocketPath;
+    parsedUrl.pathname = `${parsedUrl.pathname.replace(/\/$/, "")}${CoreSdk.webSocketPath}`;
     parsedUrl.search = "";
     parsedUrl.hash = "";
 
     return parsedUrl.toString().replace(/\/$/, "");
   }
 
-  private assertWebSocketUrl(webSocketUrl: string): URL {
+  private static normalizeHttpBaseUrl(baseUrl: string, configKey: string): string {
     let parsedUrl: URL;
 
     try {
-      parsedUrl = new URL(webSocketUrl);
+      parsedUrl = new URL(baseUrl.trim());
     } catch {
-      throw new Error("CoreSdk webSocketUrl must be a valid absolute URL.");
+      throw new Error(`CoreSdk ${configKey} must be a valid absolute URL.`);
     }
 
-    if (parsedUrl.protocol !== "ws:" && parsedUrl.protocol !== "wss:") {
-      throw new Error("CoreSdk webSocketUrl must use ws or wss protocol.");
+    if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+      throw new Error(`CoreSdk ${configKey} must use http or https protocol.`);
     }
 
-    return parsedUrl;
+    return baseUrl.trim().replace(/\/+$/, "");
+  }
+
+  private static normalizePushBaseUrl(baseUrl: string): string {
+    let parsedUrl: URL;
+
+    try {
+      parsedUrl = new URL(baseUrl.trim());
+    } catch {
+      throw new Error("CoreSdk pushBaseUrl must be a valid absolute URL.");
+    }
+
+    if (parsedUrl.protocol !== "wss:") {
+      throw new Error("CoreSdk pushBaseUrl must use wss protocol.");
+    }
+
+    return baseUrl.trim().replace(/\/+$/, "");
   }
 
   async ensureInstallationToken(): Promise<string> {
@@ -351,6 +378,38 @@ export class CoreSdk {
   }
 
   async request<T = unknown>(options: RequestOptions): Promise<T> {
+    return this.requestWithBaseUrl<T>(this.baseUrl, options);
+  }
+
+  async requestAuthentication<T = unknown>(options: RequestOptions): Promise<T> {
+    if (!this.authenticationBaseUrl) {
+      throw new Error("CoreSdk authenticationBaseUrl is required to use AuthSdk.");
+    }
+
+    return this.requestWithBaseUrl<T>(this.authenticationBaseUrl, options);
+  }
+
+  async requestAnalytics<T = unknown>(options: RequestOptions): Promise<T> {
+    if (!this.analyticsBaseUrl) {
+      throw new Error("CoreSdk analyticsBaseUrl is required to use AnalyticsSdk.");
+    }
+
+    return this.requestWithBaseUrl<T>(this.analyticsBaseUrl, options);
+  }
+
+  isAuthenticationConfigured(): boolean {
+    return this.authenticationBaseUrl !== undefined;
+  }
+
+  isAnalyticsConfigured(): boolean {
+    return this.analyticsBaseUrl !== undefined;
+  }
+
+  isPushConfigured(): boolean {
+    return this.pushBaseUrl !== undefined;
+  }
+
+  private async requestWithBaseUrl<T>(baseUrl: string, options: RequestOptions): Promise<T> {
     if (!options?.method || !options?.url) {
       throw new Error("Request method and url are required.");
     }
@@ -362,7 +421,7 @@ export class CoreSdk {
 
     return this.httpClient.request<T>({
       method: options.method,
-      url: `${this.baseUrl}${options.url}`,
+      url: `${baseUrl}${options.url}`,
       headers,
       body: options.body,
       signal: options.signal,

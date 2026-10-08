@@ -238,9 +238,15 @@ class CoreSdk {
         if (!config.apiKey) {
             throw new Error("CoreSdk Api-key is required.");
         }
-        this.baseUrl = config.baseUrl.replace(/\/$/, "");
+        this.baseUrl = CoreSdk.normalizeHttpBaseUrl(config.baseUrl, "baseUrl");
+        this.authenticationBaseUrl = config.authenticationBaseUrl
+            ? CoreSdk.normalizeHttpBaseUrl(config.authenticationBaseUrl, "authenticationBaseUrl")
+            : undefined;
+        this.analyticsBaseUrl = config.analyticsBaseUrl
+            ? CoreSdk.normalizeHttpBaseUrl(config.analyticsBaseUrl, "analyticsBaseUrl")
+            : undefined;
+        this.pushBaseUrl = config.pushBaseUrl ? CoreSdk.normalizePushBaseUrl(config.pushBaseUrl) : undefined;
         this.apiKey = config.apiKey;
-        this.webSocketUrl = config.webSocketUrl?.trim();
         this.httpClient = new FetchHttpClient();
         this.storage = new BrowserStorage();
         this.deviceInfo = new DeviceInfo();
@@ -263,7 +269,7 @@ class CoreSdk {
     async deviceRegister(payload) {
         const response = await this.httpClient.request({
             method: "POST",
-            url: `${this.baseUrl}:7078/api/v1/devices/register`,
+            url: `${this.baseUrl}/api/v1/devices/register`,
             headers: { "Content-Type": "application/json", ...this.getApiKeyHeader() },
             body: {
                 platform: "WEB",
@@ -283,7 +289,7 @@ class CoreSdk {
         const shouldUpdateDeviceInfo = !savedDeviceInfo || !this.areDeviceInfoEqual(savedDeviceInfo, currentDeviceInfo);
         const response = await this.httpClient.request({
             method: "PATCH",
-            url: `${this.baseUrl}:7078/api/v1/devices/update`,
+            url: `${this.baseUrl}/api/v1/devices/update`,
             headers: {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${installationToken}`,
@@ -317,7 +323,7 @@ class CoreSdk {
         }
         const response = await this.request({
             method: "POST",
-            url: ":7078/api/v1/devices/token/refresh",
+            url: "/api/v1/devices/token/refresh",
             headers: { Authorization: `Bearer ${installationToken}` },
         });
         if (response.success && response.data?.token) {
@@ -353,7 +359,7 @@ class CoreSdk {
         }
         const response = await this.request({
             method: "DELETE",
-            url: ":7078/api/v1/devices/deactivate",
+            url: "/api/v1/devices/deactivate",
             headers: { Authorization: `Bearer ${installationToken}` },
         });
         if (response === null || response.success) {
@@ -362,28 +368,40 @@ class CoreSdk {
         return response;
     }
     getWebSocketUrl() {
-        if (!this.webSocketUrl) {
-            throw new Error("CoreSdk webSocketUrl is required to use PushSdk.");
+        if (!this.pushBaseUrl) {
+            throw new Error("CoreSdk pushBaseUrl is required to use PushSdk.");
         }
-        const parsedUrl = this.assertWebSocketUrl(this.webSocketUrl);
-        parsedUrl.port = CoreSdk.defaultWebSocketPort;
-        parsedUrl.pathname = CoreSdk.webSocketPath;
+        const parsedUrl = new URL(this.pushBaseUrl);
+        parsedUrl.pathname = `${parsedUrl.pathname.replace(/\/$/, "")}${CoreSdk.webSocketPath}`;
         parsedUrl.search = "";
         parsedUrl.hash = "";
         return parsedUrl.toString().replace(/\/$/, "");
     }
-    assertWebSocketUrl(webSocketUrl) {
+    static normalizeHttpBaseUrl(baseUrl, configKey) {
         let parsedUrl;
         try {
-            parsedUrl = new URL(webSocketUrl);
+            parsedUrl = new URL(baseUrl.trim());
         }
         catch {
-            throw new Error("CoreSdk webSocketUrl must be a valid absolute URL.");
+            throw new Error(`CoreSdk ${configKey} must be a valid absolute URL.`);
         }
-        if (parsedUrl.protocol !== "ws:" && parsedUrl.protocol !== "wss:") {
-            throw new Error("CoreSdk webSocketUrl must use ws or wss protocol.");
+        if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+            throw new Error(`CoreSdk ${configKey} must use http or https protocol.`);
         }
-        return parsedUrl;
+        return baseUrl.trim().replace(/\/+$/, "");
+    }
+    static normalizePushBaseUrl(baseUrl) {
+        let parsedUrl;
+        try {
+            parsedUrl = new URL(baseUrl.trim());
+        }
+        catch {
+            throw new Error("CoreSdk pushBaseUrl must be a valid absolute URL.");
+        }
+        if (parsedUrl.protocol !== "wss:") {
+            throw new Error("CoreSdk pushBaseUrl must use wss protocol.");
+        }
+        return baseUrl.trim().replace(/\/+$/, "");
     }
     async ensureInstallationToken() {
         let installationToken = await this.getInstallationToken();
@@ -447,6 +465,30 @@ class CoreSdk {
         return this.storage.clearAuthToken();
     }
     async request(options) {
+        return this.requestWithBaseUrl(this.baseUrl, options);
+    }
+    async requestAuthentication(options) {
+        if (!this.authenticationBaseUrl) {
+            throw new Error("CoreSdk authenticationBaseUrl is required to use AuthSdk.");
+        }
+        return this.requestWithBaseUrl(this.authenticationBaseUrl, options);
+    }
+    async requestAnalytics(options) {
+        if (!this.analyticsBaseUrl) {
+            throw new Error("CoreSdk analyticsBaseUrl is required to use AnalyticsSdk.");
+        }
+        return this.requestWithBaseUrl(this.analyticsBaseUrl, options);
+    }
+    isAuthenticationConfigured() {
+        return this.authenticationBaseUrl !== undefined;
+    }
+    isAnalyticsConfigured() {
+        return this.analyticsBaseUrl !== undefined;
+    }
+    isPushConfigured() {
+        return this.pushBaseUrl !== undefined;
+    }
+    async requestWithBaseUrl(baseUrl, options) {
         if (!options?.method || !options?.url) {
             throw new Error("Request method and url are required.");
         }
@@ -456,14 +498,13 @@ class CoreSdk {
         };
         return this.httpClient.request({
             method: options.method,
-            url: `${this.baseUrl}${options.url}`,
+            url: `${baseUrl}${options.url}`,
             headers,
             body: options.body,
             signal: options.signal,
         });
     }
 }
-CoreSdk.defaultWebSocketPort = "7071";
 CoreSdk.webSocketPath = "/ws/push";
 
 exports.BrowserStorage = BrowserStorage;

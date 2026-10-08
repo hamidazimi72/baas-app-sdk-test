@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
 import { AnalyticsSdk, AuthSdk, CoreSdk, PushSdk } from 'new-sdk';
 
-import { installSdkFetchProxy } from './sdk-fetch-proxy';
+import { MBAAS_CONFIG_CHANGED_EVENT, getEnvironmentMbaasConfig, readMbaasBaseUrlConfig } from './mbaas-config-storage';
 
 type MbaasSdkContextValue = {
 	core: CoreSdk | null;
@@ -21,33 +21,56 @@ type MbaasSdkContextValue = {
 
 const MbaasSdkContext = createContext<MbaasSdkContextValue | null>(null);
 
-const getWebSocketUrl = (baseUrl: string) => {
-	if (!baseUrl) return undefined;
+// const getWebSocketUrl = (baseUrl: string) => {
+// 	if (!baseUrl) return undefined;
 
-	try {
-		const url = new URL(baseUrl);
-		url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
-		return url.toString().replace(/\/$/, '');
-	} catch {
-		return undefined;
-	}
-};
+// 	try {
+// 		const url = new URL(baseUrl);
+// 		url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+// 		return url.toString().replace(/\/$/, '');
+// 	} catch {
+// 		return undefined;
+// 	}
+// };
 
 const getCoreConfig = () => {
-	const baseUrl = process.env.NEXT_PUBLIC_MBAAS_BASE_URL?.trim() ?? '';
-	const webSocketUrl = 'wss://merci-booking.com';
-	// const webSocketUrl = process.env.NEXT_PUBLIC_MBAAS_WEBSOCKET_URL?.trim() ?? '';
+	const environmentConfig = getEnvironmentMbaasConfig();
 
 	return {
-		baseUrl,
-		apiKey: process.env.NEXT_PUBLIC_MBAAS_API_KEY ?? '',
-		webSocketUrl: webSocketUrl || getWebSocketUrl(baseUrl),
+		apiKey: environmentConfig.apiKey,
+		baseUrl: environmentConfig.coreBaseUrl,
+		analyticsBaseUrl: environmentConfig.analyticsBaseUrl,
+		authenticationBaseUrl: environmentConfig.authenticationBaseUrl,
+		pushBaseUrl: environmentConfig.websocketBaseUrl,
+		// pushBaseUrl: pushBaseUrl || getWebSocketUrl(baseUrl),
 	};
 };
 
+const getCoreConfigWithStoredUrls = () => {
+	const config = getCoreConfig();
+	const storedConfig = readMbaasBaseUrlConfig();
+
+	return {
+		...config,
+		apiKey: storedConfig.apiKey,
+		baseUrl: storedConfig.coreBaseUrl || config.baseUrl,
+		authenticationBaseUrl: storedConfig.authenticationBaseUrl || config.authenticationBaseUrl,
+		analyticsBaseUrl: storedConfig.analyticsBaseUrl || config.analyticsBaseUrl,
+		pushBaseUrl: storedConfig.websocketBaseUrl || config.pushBaseUrl,
+	};
+};
+
+type CoreConfig = ReturnType<typeof getCoreConfigWithStoredUrls>;
+
+const isSameCoreConfig = (current: CoreConfig | null, next: CoreConfig) =>
+	current?.apiKey === next.apiKey &&
+	current.baseUrl === next.baseUrl &&
+	current.authenticationBaseUrl === next.authenticationBaseUrl &&
+	current.analyticsBaseUrl === next.analyticsBaseUrl &&
+	current.pushBaseUrl === next.pushBaseUrl;
+
 export function MbaasProvider({ children }: Readonly<{ children: React.ReactNode }>) {
-	installSdkFetchProxy();
-	const config = useMemo(() => getCoreConfig(), []);
+	const [config, setConfig] = useState<CoreConfig | null>(null);
 	const [isInitialized, setIsInitialized] = useState(false);
 	const [initializationError, setInitializationError] = useState<Error | null>(null);
 	const [isPushInitialized, setIsPushInitialized] = useState(false);
@@ -55,8 +78,19 @@ export function MbaasProvider({ children }: Readonly<{ children: React.ReactNode
 	const [isAnalyticsInitialized, setIsAnalyticsInitialized] = useState(false);
 	const [pushInitializationError, setPushInitializationError] = useState<Error | null>(null);
 
+	useEffect(() => {
+		const syncStoredConfig = () => {
+			const nextConfig = getCoreConfigWithStoredUrls();
+			setConfig((currentConfig) => (isSameCoreConfig(currentConfig, nextConfig) ? currentConfig : nextConfig));
+		};
+		syncStoredConfig();
+		window.addEventListener(MBAAS_CONFIG_CHANGED_EVENT, syncStoredConfig);
+
+		return () => window.removeEventListener(MBAAS_CONFIG_CHANGED_EVENT, syncStoredConfig);
+	}, []);
+
 	const core = useMemo(() => {
-		if (!config.baseUrl || !config.apiKey) return null;
+		if (!config?.baseUrl || !config.apiKey) return null;
 		return new CoreSdk(config);
 	}, [config]);
 
@@ -81,6 +115,8 @@ export function MbaasProvider({ children }: Readonly<{ children: React.ReactNode
 		if (!core) return;
 
 		let active = true;
+		setIsInitialized(false);
+		setInitializationError(null);
 		void core
 			.initializeApp()
 			.then(() => {
@@ -100,6 +136,8 @@ export function MbaasProvider({ children }: Readonly<{ children: React.ReactNode
 		if (!core || !push || !isInitialized || typeof window === 'undefined' || !('serviceWorker' in navigator)) return;
 
 		let active = true;
+		setIsPushInitialized(false);
+		setPushInitializationError(null);
 		const initializePush = async () => {
 			try {
 				const registration = await navigator.serviceWorker.register('/sw.js');

@@ -12,8 +12,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
 	return (
-		<html lang='fa' dir='rtl' cz-shortcut-listen='true'>
-			<body className={iranSans.className}>
+		<html lang='fa' dir='rtl' suppressHydrationWarning>
+			<body className={iranSans.className} suppressHydrationWarning>
 				<MbaasProvider>{children}</MbaasProvider>
 			</body>
 		</html>

@@ -37,6 +37,23 @@ type FormState = {
 
 const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? '';
 const googleClientSecret = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_SECRET ?? '';
+const installationTokenKey = 'mbaas:installation_token';
+const localStorageKeysAfterDeactivation = [
+	'mbaas:analytics:first_visit',
+	'mbaas:device_info:v1',
+	'mbaas:device_info:v2',
+	'mbaas:device_info:v3',
+	'mbaas:device_info:v4',
+	installationTokenKey,
+	'mbaas:installation_token_expires_at',
+];
+const sessionStorageKeysAfterDeactivation = [
+	'mbaas:analytics:session_id',
+	'mbaas:analytics:session_last_active',
+	'mbaas:analytics:session_timeout_ms',
+	'mbaas:session_start',
+	'myGov_oauth_state',
+];
 const initialForm: FormState = {
 	email: '',
 	phone: '',
@@ -64,7 +81,7 @@ const modeLabels: Record<Mode, string> = {
 	login: 'ورود',
 	recovery: 'بازیابی رمز عبور',
 	profile: 'پروفایل و توکن‌ها',
-	device: 'ویرایش اطلاعات دستگاه',
+	device: 'اطلاعات دستگاه',
 	convert: 'تبدیل کاربر ناشناس',
 	logout: 'خروج',
 };
@@ -140,15 +157,20 @@ export function AuthSdkDemo() {
 	const [response, setResponse] = useState<unknown>(null);
 	const [latestQueuedEvent, setLatestQueuedEvent] = useState<QueuedEvent | null>(null);
 	const [loading, setLoading] = useState(false);
+	const [hasInstallationToken, setHasInstallationToken] = useState(false);
 	const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | null>(null);
 	useEffect(() => {
 		setForm((current) => (current.redirectUri ? current : { ...current, redirectUri: window.location.origin }));
+		setHasInstallationToken(Boolean(window.localStorage.getItem(installationTokenKey)));
 		if (!('Notification' in window)) alert('Notification no exist in window 1');
 		if ('Notification' in window) {
 			// alert(Notification.permission);
 			setNotificationPermission(Notification.permission);
 		}
 	}, []);
+	useEffect(() => {
+		if (isInitialized) setHasInstallationToken(Boolean(window.localStorage.getItem(installationTokenKey)));
+	}, [isInitialized]);
 	const requestNotificationPermission = async () => {
 		if (!('Notification' in window)) alert('Notification no exist in window 2');
 		const permission = await Notification.requestPermission();
@@ -236,6 +258,30 @@ export function AuthSdkDemo() {
 		} catch (error) {
 			setResponse({ success: false, error: serializeError(error) });
 			return false;
+		} finally {
+			setLoading(false);
+		}
+	};
+	const deactivateDevice = async () => {
+		if (!core) {
+			setResponse({ success: false, message: 'Core SDK آماده نیست.' });
+			return;
+		}
+
+		setLoading(true);
+		try {
+			const result = await core.deactivateDevice();
+			if (!isSuccess(result)) {
+				setResponse(result);
+				return;
+			}
+
+			localStorageKeysAfterDeactivation.forEach((key) => window.localStorage.removeItem(key));
+			sessionStorageKeysAfterDeactivation.forEach((key) => window.sessionStorage.removeItem(key));
+			setHasInstallationToken(false);
+			setResponse(result ?? { success: true, message: 'دستگاه با موفقیت غیرفعال شد.' });
+		} catch (error) {
+			setResponse({ success: false, error: serializeError(error) });
 		} finally {
 			setLoading(false);
 		}
@@ -542,11 +588,24 @@ export function AuthSdkDemo() {
 				<section className='rounded-xl bg-surface-primary p-4 shadow-sm md:p-8'>
 					<div className='flex flex-wrap items-center justify-between gap-3'>
 						<h1 className='text-2xl font-semibold text-text-primary'>MBaas SDK Test</h1>
-						{notificationPermission === 'default' && (
-							<PrimaryButton type='button' size='sm' onClick={() => void requestNotificationPermission()}>
-								فعال‌سازی اعلان‌ها
-							</PrimaryButton>
-						)}
+						<div className='flex flex-wrap items-center gap-2'>
+							{hasInstallationToken && (
+								<PrimaryButton
+									type='button'
+									size='sm'
+									color='danger'
+									disabled={loading || !core}
+									onClick={() => void deactivateDevice()}
+								>
+									غیرفعالسازی دستگاه
+								</PrimaryButton>
+							)}
+							{notificationPermission === 'default' && (
+								<PrimaryButton type='button' size='sm' onClick={() => void requestNotificationPermission()}>
+									فعال‌سازی اعلان‌ها
+								</PrimaryButton>
+							)}
+						</div>
 					</div>
 					<p className='mt-2 text-sm text-text-secondary'>تست قابلیت‌های احراز هویت، پروفایل و نشست‌های SDK</p>
 					<div className='my-8 grid grid-cols-1 gap-4'>
