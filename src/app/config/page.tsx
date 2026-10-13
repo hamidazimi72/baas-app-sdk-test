@@ -8,28 +8,20 @@ import { ArrowLeft, Save, Settings } from 'lucide-react';
 
 import { PrimaryButton } from '@/components/atom/buttons';
 import { PrimaryInput } from '@/components/atom/inputs';
-import { getEnvironmentMbaasConfig, readMbaasBaseUrlConfig, writeMbaasBaseUrlConfig } from '@/sdk/mbaas-config-storage';
-import type { MbaasBaseUrlConfig } from '@/sdk/mbaas-config-storage';
+import { getEnvironmentMbaasConfig, readMbaasConfig, writeMbaasConfig } from '@/sdk/mbaas-config-storage';
+import type { MbaasConfig } from '@/sdk/mbaas-config-storage';
 
-type ConfigField = keyof MbaasBaseUrlConfig;
+type ConfigField = keyof MbaasConfig;
 
 const fields: Array<{ key: ConfigField; label: string; placeholder: string }> = [
 	{ key: 'apiKey', label: 'API key', placeholder: 'Enter your API key' },
-	{ key: 'coreBaseUrl', label: 'Core base URL', placeholder: 'https://core.example.com' },
-	{
-		key: 'authenticationBaseUrl',
-		label: 'Authentication base URL',
-		placeholder: 'https://auth.example.com',
-	},
-	{ key: 'websocketBaseUrl', label: 'WebSocket base URL', placeholder: 'wss://push.example.com' },
-	{ key: 'analyticsBaseUrl', label: 'Analytics base URL', placeholder: 'https://analytics.example.com' },
 ];
 
 export default function ConfigPage() {
-	const [config, setConfig] = useState<MbaasBaseUrlConfig>(getEnvironmentMbaasConfig);
+	const [config, setConfig] = useState<MbaasConfig>(getEnvironmentMbaasConfig);
 	const [saved, setSaved] = useState(false);
 
-	useEffect(() => setConfig(readMbaasBaseUrlConfig()), []);
+	useEffect(() => setConfig(readMbaasConfig()), []);
 
 	const update = (key: ConfigField, value: string) => {
 		setSaved(false);
@@ -38,13 +30,8 @@ export default function ConfigPage() {
 
 	const submit = (event: FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
-		const normalizedConfig = Object.fromEntries(
-			Object.entries(config).map(([key, value]) => [
-				key,
-				key === 'apiKey' ? value.trim() : value.trim().replace(/\/$/, ''),
-			]),
-		) as MbaasBaseUrlConfig;
-		writeMbaasBaseUrlConfig(normalizedConfig);
+		const normalizedConfig = { apiKey: config.apiKey.trim() };
+		writeMbaasConfig(normalizedConfig);
 		setConfig(normalizedConfig);
 		setSaved(true);
 	};
@@ -61,7 +48,7 @@ export default function ConfigPage() {
 								</span>
 								<h1 className='text-2xl font-semibold text-text-primary'>تنظیمات وب اپلیکیشن</h1>
 							</div>
-							<p className='mt-3 text-sm text-text-secondary'>آدرس سرویس‌های مورد استفاده SDK را وارد کنید.</p>
+							<p className='mt-3 text-sm text-text-secondary'>کلید API مورد استفاده SDK را وارد کنید.</p>
 						</div>
 						<Link href='/' className='flex items-center gap-2 text-sm text-primary hover:underline'>
 							صفحه اصلی

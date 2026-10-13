@@ -112,7 +112,7 @@ self.addEventListener('fetch', (event) => {
 	const url = new URL(request.url);
 	if (url.origin !== self.location.origin) return;
 
-	// Auth/BFF data, console HTML, and RSC payloads are session-bound and must never
+	// Private API data, console HTML, and RSC payloads are session-bound and must never
 	// touch Cache API. Navigations are also network-only so middleware always runs.
 	if (isPrivatePath(url) || isRscRequest(request, url)) {
 		event.respondWith(networkOnly(request, request.mode === 'navigate'));

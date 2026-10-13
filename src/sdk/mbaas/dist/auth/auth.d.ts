@@ -7,18 +7,7 @@ interface RequestOptions {
 }
 
 interface CoreSdkConfig {
-    /** Base URL for device APIs. */
-    baseUrl: string;
-    /** Base URL for authentication APIs. */
-    authenticationBaseUrl?: string;
-    /** Base URL for analytics APIs. */
-    analyticsBaseUrl?: string;
     apiKey: string;
-    /**
-     * Push WebSocket base URL. The SDK appends /ws/push.
-     * Example: wss://api.example.com
-     */
-    pushBaseUrl?: string;
 }
 interface DeviceData {
     token: string;

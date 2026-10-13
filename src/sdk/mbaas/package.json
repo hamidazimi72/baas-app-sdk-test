@@ -50,11 +50,13 @@
   },
   "scripts": {
     "build": "rollup -c",
+    "build:development": "rollup -c --environment SDK_ENV:development",
+    "build:production": "rollup -c --environment SDK_ENV:production",
     "build:core": "rollup -c --environment TARGET:core",
     "build:auth": "rollup -c --environment TARGET:auth",
     "build:push": "rollup -c --environment TARGET:push",
     "build:analytics": "rollup -c --environment TARGET:analytics",
-    "dev": "rollup -c --watch"
+    "dev": "rollup -c --watch --environment SDK_ENV:development"
   },
   "devDependencies": {
     "@rollup/plugin-terser": "^0.4.4",

@@ -221,6 +221,13 @@ class DeviceInfo {
     }
 }
 
+const endpoints = Object.freeze({
+    baseUrl: "http://130.185.72.14:7078",
+    authenticationBaseUrl: "http://130.185.72.14:8060",
+    analyticsBaseUrl: "http://130.185.72.14:8075",
+    pushBaseUrl: "ws://130.185.72.14:7071",
+});
+
 const INSTALLATION_TOKEN_REFRESH_THRESHOLD_DAYS = 14;
 const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
 class CoreSdk {
@@ -232,20 +239,13 @@ class CoreSdk {
         if (!config) {
             throw new Error("CoreSdk config is required.");
         }
-        if (!config.baseUrl) {
-            throw new Error("CoreSdk baseUrl is required.");
-        }
         if (!config.apiKey) {
             throw new Error("CoreSdk Api-key is required.");
         }
-        this.baseUrl = CoreSdk.normalizeHttpBaseUrl(config.baseUrl, "baseUrl");
-        this.authenticationBaseUrl = config.authenticationBaseUrl
-            ? CoreSdk.normalizeHttpBaseUrl(config.authenticationBaseUrl, "authenticationBaseUrl")
-            : undefined;
-        this.analyticsBaseUrl = config.analyticsBaseUrl
-            ? CoreSdk.normalizeHttpBaseUrl(config.analyticsBaseUrl, "analyticsBaseUrl")
-            : undefined;
-        this.pushBaseUrl = config.pushBaseUrl ? CoreSdk.normalizePushBaseUrl(config.pushBaseUrl) : undefined;
+        this.baseUrl = CoreSdk.normalizeHttpBaseUrl(endpoints.baseUrl, "baseUrl");
+        this.authenticationBaseUrl = CoreSdk.normalizeHttpBaseUrl(endpoints.authenticationBaseUrl, "authenticationBaseUrl");
+        this.analyticsBaseUrl = CoreSdk.normalizeHttpBaseUrl(endpoints.analyticsBaseUrl, "analyticsBaseUrl");
+        this.pushBaseUrl = CoreSdk.normalizePushBaseUrl(endpoints.pushBaseUrl);
         this.apiKey = config.apiKey;
         this.httpClient = new FetchHttpClient();
         this.storage = new BrowserStorage();
@@ -385,9 +385,6 @@ class CoreSdk {
         catch {
             throw new Error(`CoreSdk ${configKey} must be a valid absolute URL.`);
         }
-        if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
-            throw new Error(`CoreSdk ${configKey} must use http or https protocol.`);
-        }
         return baseUrl.trim().replace(/\/+$/, "");
     }
     static normalizePushBaseUrl(baseUrl) {
@@ -397,9 +394,6 @@ class CoreSdk {
         }
         catch {
             throw new Error("CoreSdk pushBaseUrl must be a valid absolute URL.");
-        }
-        if (parsedUrl.protocol !== "wss:") {
-            throw new Error("CoreSdk pushBaseUrl must use wss protocol.");
         }
         return baseUrl.trim().replace(/\/+$/, "");
     }

@@ -1,23 +1,13 @@
 import { FetchHttpClient, RequestOptions } from "./FetchHttpClient.js";
 import { BrowserStorage } from "./BrowserStorage.js";
 import { DeviceInfo, DeviceInfoData } from "./DeviceInfo.js";
+import { endpoints } from "../config/endpoints.js";
 
 const INSTALLATION_TOKEN_REFRESH_THRESHOLD_DAYS = 14;
 const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
 
 export interface CoreSdkConfig {
-  /** Base URL for device APIs. */
-  baseUrl: string;
-  /** Base URL for authentication APIs. */
-  authenticationBaseUrl?: string;
-  /** Base URL for analytics APIs. */
-  analyticsBaseUrl?: string;
   apiKey: string;
-  /**
-   * Push WebSocket base URL. The SDK appends /ws/push.
-   * Example: wss://api.example.com
-   */
-  pushBaseUrl?: string;
 }
 
 export interface DeviceData {
@@ -63,21 +53,17 @@ export class CoreSdk {
     if (!config) {
       throw new Error("CoreSdk config is required.");
     }
-    if (!config.baseUrl) {
-      throw new Error("CoreSdk baseUrl is required.");
-    }
     if (!config.apiKey) {
       throw new Error("CoreSdk Api-key is required.");
     }
 
-    this.baseUrl = CoreSdk.normalizeHttpBaseUrl(config.baseUrl, "baseUrl");
-    this.authenticationBaseUrl = config.authenticationBaseUrl
-      ? CoreSdk.normalizeHttpBaseUrl(config.authenticationBaseUrl, "authenticationBaseUrl")
-      : undefined;
-    this.analyticsBaseUrl = config.analyticsBaseUrl
-      ? CoreSdk.normalizeHttpBaseUrl(config.analyticsBaseUrl, "analyticsBaseUrl")
-      : undefined;
-    this.pushBaseUrl = config.pushBaseUrl ? CoreSdk.normalizePushBaseUrl(config.pushBaseUrl) : undefined;
+    this.baseUrl = CoreSdk.normalizeHttpBaseUrl(endpoints.baseUrl, "baseUrl");
+    this.authenticationBaseUrl = CoreSdk.normalizeHttpBaseUrl(
+      endpoints.authenticationBaseUrl,
+      "authenticationBaseUrl",
+    );
+    this.analyticsBaseUrl = CoreSdk.normalizeHttpBaseUrl(endpoints.analyticsBaseUrl, "analyticsBaseUrl");
+    this.pushBaseUrl = CoreSdk.normalizePushBaseUrl(endpoints.pushBaseUrl);
     this.apiKey = config.apiKey;
     this.httpClient = new FetchHttpClient();
     this.storage = new BrowserStorage();
@@ -273,10 +259,6 @@ export class CoreSdk {
       throw new Error(`CoreSdk ${configKey} must be a valid absolute URL.`);
     }
 
-    if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
-      throw new Error(`CoreSdk ${configKey} must use http or https protocol.`);
-    }
-
     return baseUrl.trim().replace(/\/+$/, "");
   }
 
@@ -287,10 +269,6 @@ export class CoreSdk {
       parsedUrl = new URL(baseUrl.trim());
     } catch {
       throw new Error("CoreSdk pushBaseUrl must be a valid absolute URL.");
-    }
-
-    if (parsedUrl.protocol !== "wss:") {
-      throw new Error("CoreSdk pushBaseUrl must use wss protocol.");
     }
 
     return baseUrl.trim().replace(/\/+$/, "");

@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
+import { Settings } from 'lucide-react';
+import Link from 'next/link';
 import type { AuthSdk, CoreSdk } from 'new-sdk';
 import { PrimaryButton } from '@/components/atom/buttons';
 import { PrimaryInput } from '@/components/atom/inputs';
@@ -587,7 +589,17 @@ export function AuthSdkDemo() {
 			<div className='mx-auto grid max-w-6xl gap-4 lg:grid-cols-2'>
 				<section className='rounded-xl bg-surface-primary p-4 shadow-sm md:p-8'>
 					<div className='flex flex-wrap items-center justify-between gap-3'>
-						<h1 className='text-2xl font-semibold text-text-primary'>MBaas SDK Test</h1>
+						<div className='relative'>
+							<Link
+								href='/config'
+								aria-label='تنظیمات'
+								title='تنظیمات'
+								className='flex size-6 items-center justify-center rounded-lg bg-primary/10 text-primary absolute -top-3 -left-7'
+							>
+								<Settings size={16} />
+							</Link>
+							<h1 className='text-2xl font-semibold text-text-primary'>Baas SDK Test</h1>
+						</div>
 						<div className='flex flex-wrap items-center gap-2'>
 							{hasInstallationToken && (
 								<PrimaryButton
@@ -607,7 +619,9 @@ export function AuthSdkDemo() {
 							)}
 						</div>
 					</div>
-					<p className='mt-2 text-sm text-text-secondary'>تست قابلیت‌های احراز هویت، پروفایل و نشست‌های SDK</p>
+					<p className='mt-2 text-sm text-text-secondary'>
+						تست قابلیت‌های ثبت دستگاه، احراز هویت، اعلان و تحلیل‌ها در SDK
+					</p>
 					<div className='my-8 grid grid-cols-1 gap-4'>
 						<PrimarySelect
 							label='عملیات'

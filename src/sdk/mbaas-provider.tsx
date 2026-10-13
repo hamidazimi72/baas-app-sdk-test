@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
 import { AnalyticsSdk, AuthSdk, CoreSdk, PushSdk } from 'new-sdk';
 
-import { MBAAS_CONFIG_CHANGED_EVENT, getEnvironmentMbaasConfig, readMbaasBaseUrlConfig } from './mbaas-config-storage';
+import { MBAAS_CONFIG_CHANGED_EVENT, readMbaasConfig } from './mbaas-config-storage';
 
 type MbaasSdkContextValue = {
 	core: CoreSdk | null;
@@ -21,53 +21,11 @@ type MbaasSdkContextValue = {
 
 const MbaasSdkContext = createContext<MbaasSdkContextValue | null>(null);
 
-// const getWebSocketUrl = (baseUrl: string) => {
-// 	if (!baseUrl) return undefined;
+const getCoreConfig = () => readMbaasConfig();
 
-// 	try {
-// 		const url = new URL(baseUrl);
-// 		url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
-// 		return url.toString().replace(/\/$/, '');
-// 	} catch {
-// 		return undefined;
-// 	}
-// };
+type CoreConfig = ReturnType<typeof getCoreConfig>;
 
-const getCoreConfig = () => {
-	const environmentConfig = getEnvironmentMbaasConfig();
-
-	return {
-		apiKey: environmentConfig.apiKey,
-		baseUrl: environmentConfig.coreBaseUrl,
-		analyticsBaseUrl: environmentConfig.analyticsBaseUrl,
-		authenticationBaseUrl: environmentConfig.authenticationBaseUrl,
-		pushBaseUrl: environmentConfig.websocketBaseUrl,
-		// pushBaseUrl: pushBaseUrl || getWebSocketUrl(baseUrl),
-	};
-};
-
-const getCoreConfigWithStoredUrls = () => {
-	const config = getCoreConfig();
-	const storedConfig = readMbaasBaseUrlConfig();
-
-	return {
-		...config,
-		apiKey: storedConfig.apiKey,
-		baseUrl: storedConfig.coreBaseUrl || config.baseUrl,
-		authenticationBaseUrl: storedConfig.authenticationBaseUrl || config.authenticationBaseUrl,
-		analyticsBaseUrl: storedConfig.analyticsBaseUrl || config.analyticsBaseUrl,
-		pushBaseUrl: storedConfig.websocketBaseUrl || config.pushBaseUrl,
-	};
-};
-
-type CoreConfig = ReturnType<typeof getCoreConfigWithStoredUrls>;
-
-const isSameCoreConfig = (current: CoreConfig | null, next: CoreConfig) =>
-	current?.apiKey === next.apiKey &&
-	current.baseUrl === next.baseUrl &&
-	current.authenticationBaseUrl === next.authenticationBaseUrl &&
-	current.analyticsBaseUrl === next.analyticsBaseUrl &&
-	current.pushBaseUrl === next.pushBaseUrl;
+const isSameCoreConfig = (current: CoreConfig | null, next: CoreConfig) => current?.apiKey === next.apiKey;
 
 export function MbaasProvider({ children }: Readonly<{ children: React.ReactNode }>) {
 	const [config, setConfig] = useState<CoreConfig | null>(null);
@@ -80,7 +38,7 @@ export function MbaasProvider({ children }: Readonly<{ children: React.ReactNode
 
 	useEffect(() => {
 		const syncStoredConfig = () => {
-			const nextConfig = getCoreConfigWithStoredUrls();
+			const nextConfig = getCoreConfig();
 			setConfig((currentConfig) => (isSameCoreConfig(currentConfig, nextConfig) ? currentConfig : nextConfig));
 		};
 		syncStoredConfig();
@@ -90,7 +48,7 @@ export function MbaasProvider({ children }: Readonly<{ children: React.ReactNode
 	}, []);
 
 	const core = useMemo(() => {
-		if (!config?.baseUrl || !config.apiKey) return null;
+		if (!config?.apiKey) return null;
 		return new CoreSdk(config);
 	}, [config]);
 
