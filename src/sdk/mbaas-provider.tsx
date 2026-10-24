@@ -2,9 +2,10 @@
 
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
-import { AnalyticsSdk, AuthSdk, CoreSdk, PushSdk } from 'new-sdk';
+import { AnalyticsSdk, AuthSdk, CoreSdk, PushSdk } from 'baas-web-sdk';
 
 import { MBAAS_CONFIG_CHANGED_EVENT, readMbaasConfig } from './mbaas-config-storage';
+import { installMbaasFetchProxy } from './mbaas-fetch-proxy';
 
 type MbaasSdkContextValue = {
 	core: CoreSdk | null;
@@ -49,6 +50,7 @@ export function MbaasProvider({ children }: Readonly<{ children: React.ReactNode
 
 	const core = useMemo(() => {
 		if (!config?.apiKey) return null;
+		installMbaasFetchProxy();
 		return new CoreSdk(config);
 	}, [config]);
 

@@ -27,7 +27,7 @@
 					}),
 					i = { 'Content-Type': 'application/json' };
 				e && (i.Authorization = `Bearer ${e}`);
-				return await fetch('https://push-gateway.stage.baas.gov.ir/api/v1/push/event', {
+				return await fetch('https://push-gateway-stage.baas.gov.ir/api/v1/push/event', {
 					method: 'POST',
 					headers: i,
 					keepalive: !0,

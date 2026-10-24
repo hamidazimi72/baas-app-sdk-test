@@ -1,5 +1,5 @@
 {
-  "name": "new-sdk",
+  "name": "baas-web-sdk",
   "version": "1.0.0",
   "type": "module",
   "files": [
@@ -42,10 +42,18 @@
   "types": "./dist/index.d.ts",
   "typesVersions": {
     "*": {
-      "core": ["dist/core/core.d.ts"],
-      "auth": ["dist/auth/auth.d.ts"],
-      "push": ["dist/push/push.d.ts"],
-      "analytics": ["dist/analytics/analytics.d.ts"]
+      "core": [
+        "dist/core/core.d.ts"
+      ],
+      "auth": [
+        "dist/auth/auth.d.ts"
+      ],
+      "push": [
+        "dist/push/push.d.ts"
+      ],
+      "analytics": [
+        "dist/analytics/analytics.d.ts"
+      ]
     }
   },
   "scripts": {

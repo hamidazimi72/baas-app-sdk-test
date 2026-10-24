@@ -32,11 +32,11 @@
 	"dependencies": {
 		"@tanstack/react-query": "^5.101.1",
 		"@tanstack/react-query-devtools": "^5.101.1",
+		"baas-web-sdk": "file:src/sdk/mbaas",
 		"clsx": "^2.1.1",
 		"framer-motion": "^12.40.0",
 		"jalali-moment": "^3.3.11",
 		"lucide-react": "^1.21.0",
-		"new-sdk": "file:src/sdk/mbaas",
 		"next": "^16.2.9",
 		"next-themes": "^0.4.6",
 		"react": "^19.2.7",

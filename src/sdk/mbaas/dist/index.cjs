@@ -222,10 +222,10 @@ class DeviceInfo {
 }
 
 const endpoints = Object.freeze({
-    baseUrl: "http://130.185.72.14:7078",
-    authenticationBaseUrl: "http://130.185.72.14:8060",
-    analyticsBaseUrl: "http://130.185.72.14:8075",
-    pushBaseUrl: "ws://130.185.72.14:7071",
+    baseUrl: "https://gateway.baas.gov.ir",
+    authenticationBaseUrl: "https://authentication.baas.gov.ir",
+    analyticsBaseUrl: "https://analytics.baas.gov.ir",
+    pushBaseUrl: "wss://delivery.baas.gov.ir",
 });
 
 const INSTALLATION_TOKEN_REFRESH_THRESHOLD_DAYS = 14;
@@ -1500,6 +1500,7 @@ class AnalyticsStorage {
 
 const MAX_QUEUED_EVENTS = 10000;
 const MAX_QUEUE_SIZE_BYTES = 5 * 1024 * 1024;
+const MAX_BATCH_ATTEMPTS = 5;
 const RETRY_BASE_DELAY_MS = 1000;
 const RETRY_MAX_DELAY_MS = 60000;
 const SCROLL_THROTTLE_MS = 200;
@@ -1940,6 +1941,10 @@ class AnalyticsSdk {
                     }
                     if (status === 429 || status === 503) {
                         retryAttempt++;
+                        if (retryAttempt >= MAX_BATCH_ATTEMPTS) {
+                            console.error(`[AnalyticsSdk] Kept the analytics batch in the local queue after ${MAX_BATCH_ATTEMPTS} attempts for HTTP ${status}.`, error);
+                            return;
+                        }
                         if (!(await this.waitForRetry(retryAttempt, queueGeneration)))
                             return;
                         continue;

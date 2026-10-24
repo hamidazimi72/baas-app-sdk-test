@@ -201,6 +201,7 @@ class AnalyticsStorage {
 
 const MAX_QUEUED_EVENTS = 10000;
 const MAX_QUEUE_SIZE_BYTES = 5 * 1024 * 1024;
+const MAX_BATCH_ATTEMPTS = 5;
 const RETRY_BASE_DELAY_MS = 1000;
 const RETRY_MAX_DELAY_MS = 60000;
 const SCROLL_THROTTLE_MS = 200;
@@ -641,6 +642,10 @@ class AnalyticsSdk {
                     }
                     if (status === 429 || status === 503) {
                         retryAttempt++;
+                        if (retryAttempt >= MAX_BATCH_ATTEMPTS) {
+                            console.error(`[AnalyticsSdk] Kept the analytics batch in the local queue after ${MAX_BATCH_ATTEMPTS} attempts for HTTP ${status}.`, error);
+                            return;
+                        }
                         if (!(await this.waitForRetry(retryAttempt, queueGeneration)))
                             return;
                         continue;
