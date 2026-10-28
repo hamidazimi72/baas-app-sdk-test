@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Settings } from 'lucide-react';
 import Link from 'next/link';
-import type { AuthSdk, CoreSdk } from 'new-sdk';
+import type { AuthSdk, CoreSdk } from 'baas-web-sdk';
 import { PrimaryButton } from '@/components/atom/buttons';
 import { PrimaryInput } from '@/components/atom/inputs';
 import { PrimarySelect } from '@/components/atom/selects';

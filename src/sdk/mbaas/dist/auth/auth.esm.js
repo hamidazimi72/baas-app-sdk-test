@@ -88,13 +88,12 @@ class AuthSdk {
     // OAuth with my gov
     signInWithMyGov(redirectUri) {
         const state = `myGov_${redirectUri.trim()}`;
-        // const state = `myGov_${crypto.randomUUID()}`;
         sessionStorage.setItem(`myGov_oauth_state`, state);
         const params = new URLSearchParams({
             response_type: "code",
             scope: "openid profile",
             client_id: "xmbaas.ir",
-            redirect_uri: "https://xmbaas.ir/dolatman-callback",
+            redirect_uri: "https://baas.gov.ir/dolatman-callback",
             state,
         });
         const authUrl = `https://sso.my.gov.ir/oauth2/authorize?${params.toString()}`;

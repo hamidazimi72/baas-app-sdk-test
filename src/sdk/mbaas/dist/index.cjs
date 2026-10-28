@@ -591,13 +591,12 @@ class AuthSdk {
     // OAuth with my gov
     signInWithMyGov(redirectUri) {
         const state = `myGov_${redirectUri.trim()}`;
-        // const state = `myGov_${crypto.randomUUID()}`;
         sessionStorage.setItem(`myGov_oauth_state`, state);
         const params = new URLSearchParams({
             response_type: "code",
             scope: "openid profile",
             client_id: "xmbaas.ir",
-            redirect_uri: "https://xmbaas.ir/dolatman-callback",
+            redirect_uri: "https://baas.gov.ir/dolatman-callback",
             state,
         });
         const authUrl = `https://sso.my.gov.ir/oauth2/authorize?${params.toString()}`;
@@ -1507,10 +1506,10 @@ const SCROLL_THROTTLE_MS = 200;
 const VIDEO_PROGRESS_CHECKPOINTS = [10, 25, 50, 75];
 const DOWNLOAD_FILE_EXTENSION = /\.(7z|avi|csv|docx?|exe|gz|key|midi?|mov|mp3|mp4|mpe|mpeg|pdf|pkg|pps|pptx?|rar|rtf|txt|wav|wma|wmv|xlsx?|zip)(?:$|[?#])/i;
 const DEFAULTS = {
-    // batchSize: 100,
-    batchSize: 10,
-    // flushIntervalMs: 60 * 60 * 1000,
-    flushIntervalMs: 5 * 60 * 1000,
+    batchSize: 100,
+    // batchSize: 10,
+    flushIntervalMs: 60 * 60 * 1000,
+    // flushIntervalMs: 5 * 60 * 1000,
     offlineRetentionMs: 72 * 60 * 60 * 1000,
     sessionTimeoutMs: 30 * 60 * 1000,
     maxBatchEvents: 100,
@@ -1612,7 +1611,9 @@ class AnalyticsSdk {
             this.recordEngagementAndFlush();
         };
         this.handleScroll = () => {
-            if (this.scrollReported || this.scrollThrottleTimer !== null || !this.automaticCollectionEnabled ||
+            if (this.scrollReported ||
+                this.scrollThrottleTimer !== null ||
+                !this.automaticCollectionEnabled ||
                 !this.automaticScreenTrackingEnabled)
                 return;
             this.scrollThrottleTimer = setTimeout(() => {
@@ -1652,15 +1653,18 @@ class AnalyticsSdk {
                 void this.enqueueAutomatic("form_submit");
         };
         this.handleVideoPlay = (event) => {
-            if (this.automaticCollectionEnabled && event.target instanceof HTMLVideoElement &&
+            if (this.automaticCollectionEnabled &&
+                event.target instanceof HTMLVideoElement &&
                 !this.startedVideos.has(event.target)) {
                 this.startedVideos.add(event.target);
                 void this.enqueueAutomatic("video_start");
             }
         };
         this.handleVideoTimeUpdate = (event) => {
-            if (!this.automaticCollectionEnabled || !(event.target instanceof HTMLVideoElement) ||
-                !Number.isFinite(event.target.duration) || event.target.duration <= 0)
+            if (!this.automaticCollectionEnabled ||
+                !(event.target instanceof HTMLVideoElement) ||
+                !Number.isFinite(event.target.duration) ||
+                event.target.duration <= 0)
                 return;
             const percent = (event.target.currentTime / event.target.duration) * 100;
             const progress = this.videoProgress.get(event.target) ?? new Set();
@@ -1676,9 +1680,7 @@ class AnalyticsSdk {
             if (this.automaticCollectionEnabled && event.target instanceof HTMLVideoElement)
                 void this.enqueueAutomatic("video_complete");
         };
-        if (!core ||
-            typeof core.requestAnalytics !== "function" ||
-            typeof core.isAnalyticsConfigured !== "function") {
+        if (!core || typeof core.requestAnalytics !== "function" || typeof core.isAnalyticsConfigured !== "function") {
             throw new Error("AnalyticsSdk requires a valid CoreSdk instance.");
         }
         if (!core.isAnalyticsConfigured()) {
@@ -2021,17 +2023,13 @@ class AnalyticsSdk {
     }
     async createBatch(events, diagnostics = {}) {
         const sessionId = this.validateBatch(events);
-        const safeDiagnostics = diagnostics !== null && typeof diagnostics === "object" && !Array.isArray(diagnostics)
-            ? diagnostics
-            : {};
+        const safeDiagnostics = diagnostics !== null && typeof diagnostics === "object" && !Array.isArray(diagnostics) ? diagnostics : {};
         const clientDiagnostics = Object.fromEntries(["dropped_expired", "dropped_future_clock", "dropped_queue_overflow"].map((field) => {
             const value = safeDiagnostics[field];
             return [field, typeof value === "number" && Number.isFinite(value) && value >= 0 ? value : 0];
         }));
         const hasDiagnostics = Object.values(clientDiagnostics).some((count) => count > 0);
-        const userProperties = this.identity.userProperties === undefined
-            ? undefined
-            : this.limitUserProperties(this.identity.userProperties);
+        const userProperties = this.identity.userProperties === undefined ? undefined : this.limitUserProperties(this.identity.userProperties);
         return {
             ...(this.identity.userId ? { user_id: this.identity.userId } : {}),
             platform: "WEB",
