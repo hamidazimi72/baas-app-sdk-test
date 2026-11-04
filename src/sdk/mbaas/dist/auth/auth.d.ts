@@ -121,8 +121,8 @@ declare class AuthSdk {
     private getInstallationTokenHeader;
     private saveTokenFromResponse;
     private getOAuthCode;
-    signInWithGoogle(clientId: string, redirectUri: string): void;
-    handleGoogleCallback(clientId: string, clientSecret: string, redirectUri: string): Promise<AuthTokenResponse>;
+    signInWithGoogle(redirectUri: string): void;
+    handleGoogleCallback(): Promise<AuthTokenResponse>;
     signInWithMyGov(redirectUri: string): void;
     handleMyGovCallback(): Promise<AuthTokenResponse>;
     registerPhoneSendOtp(payload: {

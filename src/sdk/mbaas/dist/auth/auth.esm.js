@@ -50,37 +50,35 @@ class AuthSdk {
         return code;
     }
     // OAuth with google
-    signInWithGoogle(clientId, redirectUri) {
-        const state = `google_${crypto.randomUUID()}`;
+    signInWithGoogle(redirectUri) {
+        const state = `google_${redirectUri.trim()}`;
         sessionStorage.setItem(`google_oauth_state`, state);
         const params = new URLSearchParams({
             response_type: "code",
             scope: "openid email",
-            client_id: clientId,
-            redirect_uri: redirectUri,
+            client_id: "1083823337502-k9e8dgudvgjsdjtb0dl4oolcfmevuulg.apps.googleusercontent.com",
+            redirect_uri: "https://baas.gov.ir/google-callback",
             state,
         });
         const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
         window.location.href = authUrl;
     }
-    async handleGoogleCallback(clientId, clientSecret, redirectUri) {
+    async handleGoogleCallback() {
         const url = new URL(window.location.href);
         const code = this.getOAuthCode(url, "google");
         const response = await this.core.requestAuthentication({
             method: "POST",
             url: "/api/v1/auth/google",
             headers: await this.getInstallationTokenHeader(),
-            body: {
-                code,
-                googleClientId: clientId,
-                googleClientSecret: clientSecret,
-                redirectUri,
-            },
+            body: { code, platform: "web" },
         });
         if (response.success) {
             sessionStorage.removeItem(`google_oauth_state`);
-            const cleanUrl = window.location.origin + window.location.pathname;
-            window.history.replaceState(null, "", cleanUrl);
+            const url = new URL(window.location.href);
+            ["code", "state"].forEach((param) => {
+                url.searchParams.delete(param);
+            });
+            window.history.replaceState(null, "", url.toString());
         }
         await this.saveTokenFromResponse(response);
         return response;

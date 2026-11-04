@@ -1,0 +1,2 @@
+npm un baas-web-sdk
+npm i src/sdk/mbaas
