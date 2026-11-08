@@ -11,7 +11,7 @@ import { PrimarySelect } from '@/components/atom/selects';
 import { useMbaasSdk } from '@/sdk';
 
 type Mode = 'register' | 'login' | 'recovery' | 'profile' | 'device' | 'convert' | 'logout';
-type Method = 'email' | 'phone' | 'google' | 'myGov' | 'anonymous';
+type Method = 'email' | 'phone' | 'myGov' | 'anonymous';
 type Step = 'credentials' | 'otp';
 type QueuedEvent = {
 	eventName: string;
@@ -37,8 +37,9 @@ type FormState = {
 	age: string;
 };
 
-const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? '';
-const googleClientSecret = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_SECRET ?? '';
+// ورود Google موقتاً غیرفعال است؛ برای فعال‌سازی دوباره، تنظیمات و مسیرهای پایین را از کامنت خارج کنید.
+// const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? '';
+// const googleClientSecret = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_SECRET ?? '';
 const installationTokenKey = 'mbaas:installation_token';
 const localStorageKeysAfterDeactivation = [
 	'mbaas:analytics:first_visit',
@@ -98,7 +99,7 @@ const methodOptions: Record<'register' | 'login', { value: Method; name: string 
 	login: [
 		{ value: 'email', name: 'با ایمیل' },
 		{ value: 'phone', name: 'با موبایل' },
-		{ value: 'google', name: 'با Google' },
+		// { value: 'google', name: 'با Google' }, // ورود Google موقتاً غیرفعال است.
 		{ value: 'myGov', name: 'با دولت من' },
 		{ value: 'anonymous', name: 'ورود ناشناس' },
 	],
@@ -187,6 +188,18 @@ export function AuthSdkDemo() {
 		};
 		await analytics.logEvent(queuedEvent.eventName, queuedEvent.eventParams);
 		setLatestQueuedEvent(queuedEvent);
+	};
+	const flushAnalyticsEvents = async () => {
+		if (!analytics) return;
+		setLoading(true);
+		try {
+			await analytics.flush();
+			setResponse({ success: true, message: 'ارسال فوری لاگ‌های در صف انجام شد.' });
+		} catch (error) {
+			setResponse({ success: false, error: serializeError(error) });
+		} finally {
+			setLoading(false);
+		}
 	};
 	const update = (key: keyof FormState, value: string) => setForm((current) => ({ ...current, [key]: value }));
 	const applyProfileResponse = (value: unknown) => {
@@ -447,24 +460,24 @@ export function AuthSdkDemo() {
 				resetForm();
 		}
 	};
-	const startOAuth = (provider: 'google' | 'myGov') => {
+	const startOAuth = () => {
 		if (!auth) return;
 		try {
-			if (provider === 'google') auth.signInWithGoogle(googleClientId, form.redirectUri);
-			else auth.signInWithMyGov(form.redirectUri);
+			// auth.signInWithGoogle(googleClientId, form.redirectUri); // ورود Google موقتاً غیرفعال است.
+			auth.signInWithMyGov(form.redirectUri);
 		} catch (error) {
 			setResponse({ success: false, error: serializeError(error) });
 		}
 	};
-	const completeOAuth = (provider: 'google' | 'myGov') =>
+	const completeOAuth = () =>
 		execute(
-			(sdk) =>
-				provider === 'google'
-					? sdk.handleGoogleCallback(googleClientId, googleClientSecret, form.redirectUri)
-					: sdk.handleMyGovCallback(),
+			(sdk) => {
+				// return sdk.handleGoogleCallback(googleClientId, googleClientSecret, form.redirectUri); // ورود Google موقتاً غیرفعال است.
+				return sdk.handleMyGovCallback();
+			},
 			true,
-			provider === 'google' ? 'handleGoogleCallback' : 'handleMyGovCallback',
-			{ ...(provider === 'google' ? { clientId: googleClientId } : {}), redirectUri: form.redirectUri },
+			'handleMyGovCallback',
+			{ redirectUri: form.redirectUri },
 		);
 	const fetchUser = async () => {
 		if (!auth) return;
@@ -640,14 +653,14 @@ export function AuthSdkDemo() {
 					</div>
 					<form onSubmit={submit} className='space-y-5'>
 						{mode === 'device' && deviceFields}
-						{(mode === 'register' || mode === 'login') && ['google', 'myGov'].includes(method) && oauthFields}
+						{(mode === 'register' || mode === 'login') && method === 'myGov' && oauthFields}
 						{mode === 'login' && method === 'anonymous' && (
 							<p className='rounded-lg bg-surface-secondary p-3 text-sm text-text-secondary'>
 								ورود ناشناس بدون اطلاعات ورودی انجام می‌شود.
 							</p>
 						)}
 						{(mode === 'register' || mode === 'login') &&
-							!['google', 'myGov', 'anonymous'].includes(method) &&
+							!['myGov', 'anonymous'].includes(method) &&
 							step === 'credentials' && (
 								<div className='grid grid-cols-1 gap-4'>
 									{method === 'email' ? (
@@ -681,7 +694,7 @@ export function AuthSdkDemo() {
 								</div>
 							)}
 						{(mode === 'register' || mode === 'login') &&
-							!['google', 'myGov', 'anonymous'].includes(method) &&
+							!['myGov', 'anonymous'].includes(method) &&
 							step === 'otp' &&
 							otpFields}
 						{mode === 'recovery' && step === 'credentials' && (
@@ -775,19 +788,19 @@ export function AuthSdkDemo() {
 								{loading ? 'در حال ذخیره...' : 'ذخیره تغییرات پروفایل'}
 							</PrimaryButton>
 						)}
-						{mode === 'login' && ['google', 'myGov'].includes(method) && (
+						{mode === 'login' && method === 'myGov' && (
 							<div className='flex flex-wrap gap-3'>
 								<PrimaryButton
 									type='button'
-									onClick={() => startOAuth(method as 'google' | 'myGov')}
+									onClick={() => startOAuth()}
 									disabled={!isConfigured || loading}
 									// className='rounded-lg bg-primary px-5 py-2.5 text-sm text-white disabled:opacity-50'
 								>
-									شروع ورود با {method === 'google' ? 'Google' : 'دولت من'}
+									شروع ورود با دولت من
 								</PrimaryButton>
 								<PrimaryButton
 									type='button'
-									onClick={() => completeOAuth(method as 'google' | 'myGov')}
+									onClick={() => completeOAuth()}
 									disabled={!isConfigured || loading}
 									// className='rounded-lg border border-primary/40 px-5 py-2.5 text-sm text-primary disabled:opacity-50'
 								>
@@ -795,7 +808,7 @@ export function AuthSdkDemo() {
 								</PrimaryButton>
 							</div>
 						)}
-						{mode !== 'profile' && !(mode === 'login' && ['google', 'myGov'].includes(method)) && (
+						{mode !== 'profile' && !(mode === 'login' && method === 'myGov') && (
 							<PrimaryButton
 								type='submit'
 								disabled={loading || !isConfigured}
@@ -856,9 +869,24 @@ export function AuthSdkDemo() {
 				<section className='rounded-xl border border-divider/30 bg-surface-primary p-4 shadow-sm md:p-6 lg:col-span-2'>
 					<div className='mb-4 flex flex-wrap items-center justify-between gap-3'>
 						<h2 className='text-lg font-semibold text-text-primary'>Latest queued event</h2>
-						<PrimaryButton type='button' size='sm' onClick={() => void logTestEvent()} disabled={!analytics}>
-							ارسال لاگ تستی
-						</PrimaryButton>
+						<div className='flex flex-wrap gap-2'>
+							<PrimaryButton
+								type='button'
+								size='sm'
+								onClick={() => void logTestEvent()}
+								disabled={!analytics || loading}
+							>
+								لاگ تستی
+							</PrimaryButton>
+							<PrimaryButton
+								type='button'
+								size='sm'
+								onClick={() => void flushAnalyticsEvents()}
+								disabled={!analytics || loading}
+							>
+								ارسال فوری
+							</PrimaryButton>
+						</div>
 					</div>
 					<pre
 						dir='ltr'

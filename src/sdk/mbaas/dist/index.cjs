@@ -594,7 +594,7 @@ class AuthSdk {
             response_type: "code",
             scope: "openid profile",
             client_id: "xmbaas.ir",
-            redirect_uri: "https://baas.gov.ir/dolatman-callback",
+            redirect_uri: "https://console.baas.gov.ir/dolatman-callback",
             state,
         });
         const authUrl = `https://sso.my.gov.ir/oauth2/authorize?${params.toString()}`;
