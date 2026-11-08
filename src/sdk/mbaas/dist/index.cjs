@@ -222,10 +222,10 @@ class DeviceInfo {
 }
 
 const endpoints = Object.freeze({
-    baseUrl: "http://130.185.72.14:7078",
-    authenticationBaseUrl: "http://130.185.72.14:8060",
-    analyticsBaseUrl: "http://130.185.72.14:8075",
-    pushBaseUrl: "ws://130.185.72.14:7071",
+    baseUrl: "https://gateway.baas.gov.ir",
+    authenticationBaseUrl: "https://authentication.baas.gov.ir",
+    analyticsBaseUrl: "https://analytics.baas.gov.ir",
+    pushBaseUrl: "wss://delivery.baas.gov.ir",
 });
 
 const INSTALLATION_TOKEN_REFRESH_THRESHOLD_DAYS = 14;
@@ -553,39 +553,39 @@ class AuthSdk {
         return code;
     }
     // OAuth with google
-    signInWithGoogle(redirectUri) {
-        const state = `google_${redirectUri.trim()}`;
-        sessionStorage.setItem(`google_oauth_state`, state);
-        const params = new URLSearchParams({
-            response_type: "code",
-            scope: "openid email",
-            client_id: "1083823337502-k9e8dgudvgjsdjtb0dl4oolcfmevuulg.apps.googleusercontent.com",
-            redirect_uri: "https://baas.gov.ir/google-callback",
-            state,
-        });
-        const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
-        window.location.href = authUrl;
-    }
-    async handleGoogleCallback() {
-        const url = new URL(window.location.href);
-        const code = this.getOAuthCode(url, "google");
-        const response = await this.core.requestAuthentication({
-            method: "POST",
-            url: "/api/v1/auth/google",
-            headers: await this.getInstallationTokenHeader(),
-            body: { code, platform: "web" },
-        });
-        if (response.success) {
-            sessionStorage.removeItem(`google_oauth_state`);
-            const url = new URL(window.location.href);
-            ["code", "state"].forEach((param) => {
-                url.searchParams.delete(param);
-            });
-            window.history.replaceState(null, "", url.toString());
-        }
-        await this.saveTokenFromResponse(response);
-        return response;
-    }
+    // signInWithGoogle(redirectUri: string): void {
+    //   const state = `google_${redirectUri.trim()}`;
+    //   sessionStorage.setItem(`google_oauth_state`, state);
+    //   const params = new URLSearchParams({
+    //     response_type: "code",
+    //     scope: "openid email",
+    //     client_id: "1083823337502-k9e8dgudvgjsdjtb0dl4oolcfmevuulg.apps.googleusercontent.com",
+    //     redirect_uri: "https://baas.gov.ir/google-callback",
+    //     state,
+    //   });
+    //   const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+    //   window.location.href = authUrl;
+    // }
+    // async handleGoogleCallback(): Promise<AuthTokenResponse> {
+    //   const url = new URL(window.location.href);
+    //   const code = this.getOAuthCode(url, "google");
+    //   const response = await this.core.requestAuthentication<AuthTokenResponse>({
+    //     method: "POST",
+    //     url: "/api/v1/auth/google",
+    //     headers: await this.getInstallationTokenHeader(),
+    //     body: { code, platform: "web" },
+    //   });
+    //   if (response.success) {
+    //     sessionStorage.removeItem(`google_oauth_state`);
+    //     const url = new URL(window.location.href);
+    //     ["code", "state", "iss", "scope", "authuser", "prompt"].forEach((param) => {
+    //       url.searchParams.delete(param);
+    //     });
+    //     window.history.replaceState(null, "", url.toString());
+    //   }
+    //   await this.saveTokenFromResponse(response);
+    //   return response;
+    // }
     // OAuth with my gov
     signInWithMyGov(redirectUri) {
         const state = `myGov_${redirectUri.trim()}`;
