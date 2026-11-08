@@ -2,9 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
-import { Settings } from 'lucide-react';
+import { Dice5, Settings } from 'lucide-react';
 import Link from 'next/link';
 import type { AuthSdk, CoreSdk } from 'baas-web-sdk';
+import { SHOP_EVENT_DEFINITIONS, type ShopEventName } from '@/analytics/shop/events';
+import { SHOP_EVENT_PARAMETER_DEFINITIONS, type ShopEventParameterKey } from '@/analytics/shop/event-parameters';
+import { SHOP_USER_PROPERTY_DEFINITIONS } from '@/analytics/shop/user-properties';
 import { PrimaryButton } from '@/components/atom/buttons';
 import { PrimaryInput } from '@/components/atom/inputs';
 import { PrimarySelect } from '@/components/atom/selects';
@@ -18,6 +21,53 @@ type QueuedEvent = {
 	eventParams?: Record<string, string | number | boolean>;
 	enqueuedAt: number;
 };
+
+const pickRandom = <T,>(values: readonly T[]): T => values[Math.floor(Math.random() * values.length)]!;
+
+const createRandomShopUserProperties = (): Record<string, string> => {
+	const cityProvincePairs = [
+		{
+			city: SHOP_USER_PROPERTY_DEFINITIONS.shop_city.examples[0],
+			province: SHOP_USER_PROPERTY_DEFINITIONS.shop_province.examples[0],
+		},
+		{
+			city: SHOP_USER_PROPERTY_DEFINITIONS.shop_city.examples[1],
+			province: SHOP_USER_PROPERTY_DEFINITIONS.shop_province.examples[1],
+		},
+		{
+			city: SHOP_USER_PROPERTY_DEFINITIONS.shop_city.examples[2],
+			province: SHOP_USER_PROPERTY_DEFINITIONS.shop_province.examples[2],
+		},
+	];
+	const location = pickRandom(cityProvincePairs);
+
+	return {
+		shop_age_group: pickRandom(SHOP_USER_PROPERTY_DEFINITIONS.shop_age_group.values),
+		shop_city: location.city,
+		shop_province: location.province,
+		shop_language: pickRandom(SHOP_USER_PROPERTY_DEFINITIONS.shop_language.values),
+		shop_account_type: pickRandom(SHOP_USER_PROPERTY_DEFINITIONS.shop_account_type.values),
+		shop_loyalty_tier: pickRandom(SHOP_USER_PROPERTY_DEFINITIONS.shop_loyalty_tier.values),
+		shop_preferred_delivery: pickRandom(SHOP_USER_PROPERTY_DEFINITIONS.shop_preferred_delivery.values),
+		shop_offers_opt_in: String(Math.random() < 0.5),
+		shop_preferred_category: pickRandom(SHOP_USER_PROPERTY_DEFINITIONS.shop_preferred_category.values),
+		shop_order_count: String(Math.floor(Math.random() * 20)),
+	};
+};
+
+const createRandomShopEventParameterValues = (): Record<ShopEventParameterKey, string | number | boolean> => ({
+	shop_sku: `sku_${101 + Math.floor(Math.random() * 900)}`,
+	shop_category: pickRandom(SHOP_EVENT_PARAMETER_DEFINITIONS.shop_category.examples),
+	shop_source: pickRandom(SHOP_EVENT_PARAMETER_DEFINITIONS.shop_source.examples),
+	shop_quantity: 1 + Math.floor(Math.random() * 4),
+	shop_cart_total: 250_000 + Math.floor(Math.random() * 4_750_000),
+	shop_has_coupon: Math.random() < 0.5,
+	shop_checkout_id: `checkout_${crypto.randomUUID().slice(0, 8)}`,
+	shop_payment_method: pickRandom(SHOP_EVENT_PARAMETER_DEFINITIONS.shop_payment_method.examples),
+	shop_failure_reason: pickRandom(SHOP_EVENT_PARAMETER_DEFINITIONS.shop_failure_reason.examples),
+	shop_order_id: `order_${crypto.randomUUID().slice(0, 8)}`,
+});
+
 type FormState = {
 	email: string;
 	phone: string;
@@ -188,6 +238,38 @@ export function AuthSdkDemo() {
 		};
 		await analytics.logEvent(queuedEvent.eventName, queuedEvent.eventParams);
 		setLatestQueuedEvent(queuedEvent);
+	};
+	const logRandomShopEvent = async () => {
+		if (!analytics) return;
+		setResponse(null);
+		setLoading(true);
+		try {
+			const eventNames = Object.keys(SHOP_EVENT_DEFINITIONS) as ShopEventName[];
+			const shopOpenedThisSession = window.sessionStorage.getItem('shop:opened') === 'true';
+			const availableEventNames = eventNames.filter((name) => !(shopOpenedThisSession && name === 'shop_opened'));
+			const eventName = pickRandom(availableEventNames);
+			const definition = SHOP_EVENT_DEFINITIONS[eventName];
+			const allParameterValues = createRandomShopEventParameterValues();
+			if (eventName === 'shop_coupon_applied') allParameterValues.shop_has_coupon = true;
+			const eventParams = Object.fromEntries(
+				definition.parameters.map((key) => [key, allParameterValues[key]]),
+			) as Record<string, string | number | boolean>;
+			const userProperties = createRandomShopUserProperties();
+
+			try {
+				await analytics.setUserProperties(userProperties);
+			} catch (error) {
+				console.error('Shop test user properties were not set.', error);
+			}
+
+			await analytics.logEvent(eventName, eventParams);
+			if (eventName === 'shop_opened') window.sessionStorage.setItem('shop:opened', 'true');
+			setLatestQueuedEvent({ eventName, eventParams, enqueuedAt: Date.now() });
+		} catch (error) {
+			console.error('Failed to queue a random shop event.', error);
+		} finally {
+			setLoading(false);
+		}
 	};
 	const flushAnalyticsEvents = async () => {
 		if (!analytics) return;
@@ -885,6 +967,16 @@ export function AuthSdkDemo() {
 								disabled={!analytics || loading}
 							>
 								ارسال فوری
+							</PrimaryButton>
+							<PrimaryButton
+								type='button'
+								size='sm'
+								color='info'
+								startIcon={<Dice5 size={15} />}
+								onClick={() => void logRandomShopEvent()}
+								disabled={!analytics || loading}
+							>
+								رویداد تصادفی فروشگاه
 							</PrimaryButton>
 						</div>
 					</div>
