@@ -220,10 +220,10 @@ class DeviceInfo {
 }
 
 const endpoints = Object.freeze({
-    baseUrl: "https://gateway.baas.gov.ir",
-    authenticationBaseUrl: "https://authentication.baas.gov.ir",
-    analyticsBaseUrl: "https://analytics.baas.gov.ir",
-    pushBaseUrl: "wss://delivery.baas.gov.ir",
+    baseUrl: "http://130.185.72.14:7078",
+    authenticationBaseUrl: "http://130.185.72.14:8060",
+    analyticsBaseUrl: "http://130.185.72.14:8075",
+    pushBaseUrl: "ws://130.185.72.14:7071",
 });
 
 const INSTALLATION_TOKEN_REFRESH_THRESHOLD_DAYS = 14;
@@ -592,7 +592,7 @@ class AuthSdk {
             response_type: "code",
             scope: "openid profile",
             client_id: "xmbaas.ir",
-            redirect_uri: "https://console.baas.gov.ir/dolatman-callback",
+            redirect_uri: "https://baas.gov.ir/dolatman-callback",
             state,
         });
         const authUrl = `https://sso.my.gov.ir/oauth2/authorize?${params.toString()}`;
