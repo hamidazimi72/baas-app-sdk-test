@@ -1,2 +1,3 @@
 npm un baas-web-sdk
 npm i src/sdk/mbaas
+npm install ./baas-web-sdk-1.0.0.tgz

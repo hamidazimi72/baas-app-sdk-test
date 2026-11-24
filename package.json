@@ -32,7 +32,7 @@
 	"dependencies": {
 		"@tanstack/react-query": "^5.101.1",
 		"@tanstack/react-query-devtools": "^5.101.1",
-		"baas-web-sdk": "file:src/sdk/mbaas",
+		"baas-web-sdk": "file:baas-web-sdk-1.0.0.tgz",
 		"clsx": "^2.1.1",
 		"framer-motion": "^12.40.0",
 		"jalali-moment": "^3.3.11",
